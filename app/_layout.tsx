@@ -5,15 +5,16 @@ export default function RootLayout() {
   return (
     <>
       <StatusBar
-        bar-style="light-content"
+        barStyle="light-content"
         translucent
         backgroundColor="transparent"
       />
       <Stack
         screenOptions={{
-          headerTintColor: "#333",
-          headerTitleStyle: { fontWeight: "bold" },
-          headerBackVisible: false,
+          headerStyle: { backgroundColor: "#6366f1" },                // фон хедера
+          headerTitleStyle: { fontWeight: "bold", color: "#ffffff" }, // цвет заголовка
+          headerBackVisible: false,                                     // отключаем ссылку "назад" в хедере
+          // headerTintColor: "#000000ff"                             // цвет ссылки "назад"
         }}
       >
         <Stack.Screen
@@ -21,12 +22,20 @@ export default function RootLayout() {
           options={{ title: "Быстрый счет", headerLeft: () => null }}
         />
         <Stack.Screen
+          name="game"
+          options={{ title: "Игра", headerLeft: () => null }}
+        />
+        <Stack.Screen
+          name="highscores"
+          options={{ title: "Рекорды", headerLeft: () => null }}
+        />
+        <Stack.Screen
           name="rules"
           options={{ title: "Правила", headerLeft: () => null }}
         />
         <Stack.Screen
-          name="game"
-          options={{ title: "Игра", headerLeft: () => null }}
+          name="settings"
+          options={{ title: "Настройки", headerLeft: () => null }}
         />
       </Stack>
     </>

@@ -1,12 +1,13 @@
-import StyledButton from "@/components/StyledButton";
-import StyledText from "@/components/StyledText";
-import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-import { useRouter } from "expo-router";
+import StyledButton from "@/components/StyledButton";       // единый стиль кнопок проекта
+import StyledText from "@/components/StyledText";           // единый стиль текста проекта
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5"; // иконки из библиотеки FontAwesome
+import { useRouter } from "expo-router";                    // хук для переходов между экранами
 import React from "react";
 import { StyleSheet, View } from "react-native";
 
 export default function MainScreen() {
-  const router = useRouter();
+  const router = useRouter(); // переходы между экранами
+
   return (
     <View style={styles.container}>
       <FontAwesome5
@@ -16,26 +17,35 @@ export default function MainScreen() {
         style={styles.headerIcon}
       />
       <StyledText variant="title" style={styles.title}>Быстрый счет</StyledText>
+
+      {/* Список действий на главной */}
       <View style={styles.buttonList}>
         <StyledButton
           variant="primary"
           label="Играть"
           iconName="play-circle"
-          onPress={() => router.push("/game")}
+          onPress={() => router.push("/game")}        // переход на экран игры
+          style={styles.navigationButton}
+        />
+        <StyledButton
+          variant="primary"
+          label="Рекорды"
+          iconName="trophy"
+          onPress={() => router.push("/highscores")}  // переход на экран рекрдов
           style={styles.navigationButton}
         />
         <StyledButton
           variant="primary"
           label="Правила"
           iconName="book"
-          onPress={() => router.push("/rules")}
+          onPress={() => router.push("/rules")}       // переход на экран правил
           style={styles.navigationButton}
         />
         <StyledButton
           variant="primary"
           label="Настройки"
           iconName="cog"
-          onPress={() => router.push("/")}
+          onPress={() => router.push("/settings")}    // переход на экран настроек
           style={styles.navigationButton}
         />
       </View>
@@ -43,6 +53,7 @@ export default function MainScreen() {
   );
 }
 
+// Стили для данного экрана
 const styles = StyleSheet.create({
   container: {
     flex: 1,

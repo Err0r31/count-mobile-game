@@ -1,15 +1,18 @@
-import StyledButton from "@/components/StyledButton";
-import StyledText from "@/components/StyledText";
-import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-import { useRouter } from "expo-router";
+import StyledButton from "@/components/StyledButton";       // единый стиль кнопок проекта
+import StyledText from "@/components/StyledText";           // единый стиль текста проекта
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5"; // иконки из библиотеки FontAwesome
+import { useRouter } from "expo-router";                    // хук для переходов между экранами 
 import { StyleSheet, View } from "react-native";
 
 export default function RuleScreen() {
-  const router = useRouter();
+  const router = useRouter(); // переходы между экранами
 
   return (
     <View style={styles.container}>
+      {/* Заголовок экрана */}
       <StyledText variant="title" style={styles.title}>Правила игры</StyledText>
+
+      {/* Список правил: иконка + текст */}
       <View style={styles.rulesList}>
         <View style={styles.ruleItem}>
           <View style={styles.iconContainer}>
@@ -19,6 +22,7 @@ export default function RuleScreen() {
             Решайте как можно больше математических примеров за 60 секунд!
           </StyledText>
         </View>
+
         <View style={styles.ruleItem}>
           <View style={styles.iconContainer}>
             <FontAwesome5 name="check-circle" size={24} color="#333" />
@@ -27,6 +31,7 @@ export default function RuleScreen() {
             Правильный ответ: <StyledText variant="highlight">+10 очков</StyledText>.
           </StyledText>
         </View>
+
         <View style={styles.ruleItem}>
           <View style={styles.iconContainer}>
             <FontAwesome5 name="times-circle" size={24} color="#333" />
@@ -35,6 +40,7 @@ export default function RuleScreen() {
             Ошибка: <StyledText variant="highlight">-5 очков</StyledText>.
           </StyledText>
         </View>
+
         <View style={styles.ruleItem}>
           <View style={styles.iconContainer}>
             <FontAwesome5 name="bolt" size={24} color="#333" />
@@ -43,6 +49,7 @@ export default function RuleScreen() {
             Быстрый ответ (менее 5 секунд): <StyledText variant="highlight">+2 очка</StyledText>.
           </StyledText>
         </View>
+
         <View style={styles.ruleItem}>
           <View style={styles.iconContainer}>
             <FontAwesome5 name="clock" size={24} color="#333" />
@@ -51,6 +58,7 @@ export default function RuleScreen() {
             Время: <StyledText variant="highlight">60 секунд</StyledText>. После окончания вы увидите свой счёт.
           </StyledText>
         </View>
+
         <View style={styles.ruleItem}>
           <View style={styles.iconContainer}>
             <FontAwesome5 name="forward" size={24} color="#333" />
@@ -60,6 +68,8 @@ export default function RuleScreen() {
           </StyledText>
         </View>
       </View>
+
+      {/* Кнопка внизу — вернуть пользователя на предыдущий экран */}
       <StyledButton
         variant="primary"
         label="Назад"
@@ -69,7 +79,7 @@ export default function RuleScreen() {
     </View>
   );
 }
-
+// Стили для данного экрана
 const styles = StyleSheet.create({
   container: {
     flex: 1,
