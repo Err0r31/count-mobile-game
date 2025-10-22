@@ -1,7 +1,7 @@
-import StyledButton from "@/components/StyledButton";       // единый стиль кнопок проекта
-import StyledText from "@/components/StyledText";           // единый стиль текста проекта
+import StyledButton from "@/components/StyledButton"; // единый стиль кнопок проекта
+import StyledText from "@/components/StyledText"; // единый стиль текста проекта
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5"; // иконки из библиотеки FontAwesome
-import { useRouter } from "expo-router";                    // хук для переходов между экранами
+import { useRouter } from "expo-router"; // хук для переходов между экранами
 import React from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -46,6 +46,13 @@ export default function MainScreen() {
           label="Настройки"
           iconName="cog"
           onPress={() => router.push("/settings")}    // переход на экран настроек
+          style={styles.navigationButton}
+        />
+        <StyledButton
+          variant="primary"
+          label="Мультимедиа"
+          iconName="image"
+          onPress={() => router.push("/media")}        // переход на экран мультимедиа
           style={styles.navigationButton}
         />
       </View>
