@@ -1,8 +1,10 @@
-import StyledButton from "@/components/StyledButton";                   // единый стиль кнопок проекта
-import StyledText from "@/components/StyledText";                       // единый стиль текста проекта
-import FontAwesome5 from "@expo/vector-icons/FontAwesome5";             // иконки из библиотеки FontAwesome
-import { useRouter } from "expo-router";                                // хук для переходов между экранами 
-import React, { useCallback, useEffect, useState } from "react";
+import StyledButton from "@/components/StyledButton"; // единый стиль кнопок проекта
+import StyledText from "@/components/StyledText"; // единый стиль текста проекта
+import { addHighscore, loadSettings, type Settings } from "@/storage"; // функции для работы с настройками и рекордами
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5"; // иконки из библиотеки FontAwesome
+import { Audio } from "expo-av";
+import { useRouter } from "expo-router"; // хук для переходов между экранами
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -11,29 +13,32 @@ import {
   TextInput,
   View,
 } from "react-native";
-import Modal from "react-native-modal";                                 // библиотека для модальных окон (старт, финиш)
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";    // анимации для модалок (появления/скрытия)
-import { addHighscore, loadSettings, type Settings } from "@/storage";  // функции для работы с настройками и рекордами
+import Modal from "react-native-modal"; // библиотека для модальных окон (старт, финиш)
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated"; // анимации для модалок (появления/скрытия)
 
 export default function GameScreen() {
   const router = useRouter();
-  
+
+  // Состояние и реф для аудио
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null); // Для хранения объекта звука
+
   // Состояние игры
-  const [isGameStarted, setIsGameStarted] = useState(false);            // флаг, что игра началась
-  const [countdown, setCountdown] = useState(3);                        // стартовый отсчет
-  const [timeLeft, setTimeLeft] = useState(60);                         // таймер раунда
-  const [score, setScore] = useState(0);                                // текущий счёт
+  const [isGameStarted, setIsGameStarted] = useState(false); // флаг, что игра началась
+  const [countdown, setCountdown] = useState(3); // стартовый отсчет
+  const [timeLeft, setTimeLeft] = useState(60); // таймер раунда
+  const [score, setScore] = useState(0); // текущий счёт
 
   // Текущий пример
-  const [problem, setProblem] = useState("");                           // текст примера
-  const [correctAnswer, setCorrectAnswer] = useState(0);                // правильный ответ
-  const [userAnswer, setUserAnswer] = useState("");                     // ввод пользователя               
+  const [problem, setProblem] = useState(""); // текст примера
+  const [correctAnswer, setCorrectAnswer] = useState(0); // правильный ответ
+  const [userAnswer, setUserAnswer] = useState(""); // ввод пользователя
 
   // Прочее
-  const [isGameOver, setIsGameOver] = useState(false);                  // флаг, что игра окончена
-  const [answerStartTime, setAnswerStartTime] = useState(0);            // время начала ввода ответа (для бонуса за скорость)
+  const [isGameOver, setIsGameOver] = useState(false); // флаг, что игра окончена
+  const [answerStartTime, setAnswerStartTime] = useState(0); // время начала ввода ответа (для бонуса за скорость)
   const [isStartModalVisible, setIsStartModalVisible] = useState(true); // видимость стартовой модалки
-  const [settings, setSettings] = useState<Settings | null>(null);      // загруженные настройки
+  const [settings, setSettings] = useState<Settings | null>(null); // загруженные настройки
 
   // Загружаем настройки один раз и ставим длительность раунда
   useEffect(() => {
@@ -45,49 +50,108 @@ export default function GameScreen() {
         setTimeLeft(s.durationSec);
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
+
+  // Загрузка и настройка аудио
+  useEffect(() => {
+    const loadSound = async () => {
+      try {
+        const { sound: audioSound } = await Audio.Sound.createAsync(
+          require("../assets/audio/background_music.mp3"), // Укажи путь к файлу
+          { shouldPlay: false, isLooping: true } // Не играть сразу, зациклить
+        );
+        soundRef.current = audioSound;
+        setSound(audioSound);
+      } catch (error) {
+        console.log("Ошибка загрузки музыки:", error);
+      }
+    };
+
+    loadSound();
+
+    // Очистка при размонтировании
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
+      }
+    };
+  }, []);
+
+  // Воспроизведение музыки при старте игры
+  useEffect(() => {
+    if (isGameStarted && sound && settings?.soundEnabled) {
+      const playSound = async () => {
+        try {
+          await sound.playAsync();
+        } catch (error) {
+          console.log("Ошибка воспроизведения музыки:", error);
+        }
+      };
+      playSound();
+    }
+  }, [isGameStarted, sound, settings?.soundEnabled]);
+
+  // Пауза музыки при завершении игры
+  useEffect(() => {
+    if (isGameOver && sound) {
+      const pauseSound = async () => {
+        try {
+          await sound.pauseAsync();
+        } catch (error) {
+          console.log("Ошибка паузы музыки:", error);
+        }
+      };
+      pauseSound();
+    }
+  }, [isGameOver, sound]);
 
   // Генерация целочисленного случайного числа
   const randInt = (min: number, max: number) => {
-    const lo = Math.min(min, max), hi = Math.max(min, max);
+    const lo = Math.min(min, max),
+      hi = Math.max(min, max);
     return Math.floor(Math.random() * (hi - lo + 1)) + lo;
   };
 
   // Выбор операции по включенным настройкам
-  const pickOp = (ops: Settings['ops']): '+' | '-' | '*' | '/' => {
+  const pickOp = (ops: Settings["ops"]): "+" | "-" | "*" | "/" => {
     const list = [
-      ops.add ? '+' : null,
-      ops.sub ? '-' : null,
-      ops.mul ? '*' : null,
-      ops.div ? '/' : null,
-    ].filter((x): x is '+' | '-' | '*' | '/' => x !== null);
+      ops.add ? "+" : null,
+      ops.sub ? "-" : null,
+      ops.mul ? "*" : null,
+      ops.div ? "/" : null,
+    ].filter((x): x is "+" | "-" | "*" | "/" => x !== null);
 
-    return list.length ? list[Math.floor(Math.random() * list.length)] : '+';
+    return list.length ? list[Math.floor(Math.random() * list.length)] : "+";
   };
 
   // Генерируем пример: без eval, деление даёт целый ответ, разность неотрицательная
   const generateProblem = useCallback(() => {
-    const s = settings ?? { rangeMin: 1, rangeMax: 50, ops: { add: true, sub: true, mul: true, div: true } } as Settings;
+    const s =
+      settings ??
+      ({
+        rangeMin: 1,
+        rangeMax: 50,
+        ops: { add: true, sub: true, mul: true, div: true },
+      } as Settings);
     const op = pickOp(s.ops);
 
     let a = randInt(s.rangeMin, s.rangeMax);
     let b = randInt(s.rangeMin, s.rangeMax);
 
-    if (op === '-') {
+    if (op === "-") {
       if (b > a) [a, b] = [b, a]; // избегаем отрицательных результатов
-    } else if (op === '/') {
+    } else if (op === "/") {
       // Хотим целый ответ: a = b * q
       b = Math.max(1, randInt(s.rangeMin, s.rangeMax));
       const q = randInt(Math.max(1, s.rangeMin), Math.max(1, s.rangeMax));
-      a = b * q;  
+      a = b * q;
     }
 
     const correct =
-      op === '+' ? a + b :
-        op === '-' ? a - b :
-          op === '*' ? a * b :
-            a / b;
+      op === "+" ? a + b : op === "-" ? a - b : op === "*" ? a * b : a / b;
 
     setProblem(`${a} ${op} ${b}`);
     setCorrectAnswer(correct);
@@ -100,14 +164,20 @@ export default function GameScreen() {
     if (!settings) return;
 
     if (countdown > 0 && isStartModalVisible) {
-      const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+      const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
       return () => clearTimeout(t);
     } else if (countdown === 0 && !isGameStarted) {
       setIsStartModalVisible(false);
       setIsGameStarted(true);
       generateProblem();
     }
-  }, [countdown, isGameStarted, isStartModalVisible, settings, generateProblem]);
+  }, [
+    countdown,
+    isGameStarted,
+    isStartModalVisible,
+    settings,
+    generateProblem,
+  ]);
 
   // Таймер раунда и завершение игры
   useEffect(() => {
@@ -155,6 +225,9 @@ export default function GameScreen() {
     setCorrectAnswer(0);
     setAnswerStartTime(0);
     setIsStartModalVisible(true);
+    if (sound && settings?.soundEnabled) {
+      sound.playAsync();
+    }
   };
 
   // Сохраняем результат в таблицу рекордов при закрытии финальной модалки
@@ -219,15 +292,15 @@ export default function GameScreen() {
             />
             <View style={styles.buttonContainer}>
               <StyledButton
-                variant="primary"
-                label="Ответить"
-                onPress={handleSubmit}
-              />
-              <StyledButton
                 variant="skip"
                 label="Пропустить"
                 iconName="forward"
                 onPress={handleSkip}
+              />
+              <StyledButton
+                variant="primary"
+                label="Ответить"
+                onPress={handleSubmit}
               />
             </View>
           </View>
@@ -248,7 +321,8 @@ export default function GameScreen() {
             />
             <StyledText variant="title">Игра окончена!</StyledText>
             <StyledText variant="regular" style={styles.score}>
-              Ваш счёт: <StyledText variant="highlight">{score} очков</StyledText>
+              Ваш счёт:{" "}
+              <StyledText variant="highlight">{score} очков</StyledText>
             </StyledText>
             <View style={styles.modalButtonContainer}>
               <StyledButton
