@@ -1,16 +1,17 @@
-import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5"; // иконки из библиотеки FontAwesome
 import {
-    StyleSheet,
-    TouchableOpacity,
-    TouchableOpacityProps,
+  StyleSheet,
+  TouchableOpacity,
+  TouchableOpacityProps,
 } from "react-native";
-import StyledText from "./StyledText";
+import StyledText from "./StyledText";                      // единый стиль текста проекта  
 
+// Пропсы кнопки: наследуем стандартные TouchableOpacityProps + свои поля
 type StyledButtonProps = TouchableOpacityProps & {
-  label?: string;
-  iconName?: string;
-  iconSize?: number;
-  variant?: "primary" | "skip" | "modal";
+  label?: string;                                           // текст кнопки
+  iconName?: string;                                        // имя иконки из FontAwesome
+  iconSize?: number;                                        // размер иконки
+  variant?: "primary" | "skip" | "modal";                   // визуальный вариант кнопки
 };
 
 export default function StyledButton({
@@ -24,17 +25,19 @@ export default function StyledButton({
 }: StyledButtonProps) {
   return (
     <TouchableOpacity
+    // Базовый стиль + модификаторы по состоянию/варианту + внешние стили
       style={[
         styles.base,
         disabled && styles.disabled,
         variant === "primary" && styles.primary,
         variant === "skip" && styles.skip,
         variant === "modal" && styles.modal,
-        style, 
+        style,
       ]}
       disabled={disabled}
       {...props}
     >
+      {/* Иконка слева, если задано имя */}
       {iconName && (
         <FontAwesome5
           name={iconName}
@@ -43,21 +46,23 @@ export default function StyledButton({
           style={styles.icon}
         />
       )}
+      {/* Текст кнопки */}
       {label && <StyledText variant="button">{label}</StyledText>}
     </TouchableOpacity>
   );
 }
 
+// Стили: базовый вид + состояния/варианты; тени (iOS), выравнивание контента
 const styles = StyleSheet.create({
   base: {
-    backgroundColor: "#636b2f",
+    backgroundColor: "#6366f1",
     justifyContent: "center",
     flexDirection: "row",
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#636b2f",
+    borderColor: "#6366f1",
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -69,14 +74,14 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   primary: {
-    backgroundColor: "#636b2f",
+    backgroundColor: "#6366f1",
   },
   skip: {
-    backgroundColor: "#d35400",
-    borderColor: "#d35400",
+    backgroundColor: "#ff6600ff",
+    borderColor: "#ff6600ff",
   },
   modal: {
-    backgroundColor: "#636b2f",
+    backgroundColor: "#6366f1",
     flex: 1,
     marginHorizontal: 5,
   },

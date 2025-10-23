@@ -1,105 +1,154 @@
-import StyledButton from "@/components/StyledButton";
-import StyledText from "@/components/StyledText";
-import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import StyledButton from "@/components/StyledButton";                   // единый стиль кнопок проекта
+import StyledText from "@/components/StyledText";                       // единый стиль текста проекта
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";             // иконки из библиотеки FontAwesome
+import { useRouter } from "expo-router";                                // хук для переходов между экранами 
+import React, { useCallback, useEffect, useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
 } from "react-native";
-import Modal from "react-native-modal";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import Modal from "react-native-modal";                                 // библиотека для модальных окон (старт, финиш)
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";    // анимации для модалок (появления/скрытия)
+import { addHighscore, loadSettings, type Settings } from "@/storage";  // функции для работы с настройками и рекордами
 
 export default function GameScreen() {
   const router = useRouter();
-  const [isGameStarted, setIsGameStarted] = useState(false);
-  const [countdown, setCountdown] = useState(3);
-  const [timeLeft, setTimeLeft] = useState(60);
-  const [score, setScore] = useState(0);
-  const [problem, setProblem] = useState("");
-  const [correctAnswer, setCorrectAnswer] = useState(0);
-  const [userAnswer, setUserAnswer] = useState("");
-  const [isGameOver, setIsGameOver] = useState(false);
-  const [answerStartTime, setAnswerStartTime] = useState(0);
-  const [isStartModalVisible, setIsStartModalVisible] = useState(true);
+  
+  // Состояние игры
+  const [isGameStarted, setIsGameStarted] = useState(false);            // флаг, что игра началась
+  const [countdown, setCountdown] = useState(3);                        // стартовый отсчет
+  const [timeLeft, setTimeLeft] = useState(60);                         // таймер раунда
+  const [score, setScore] = useState(0);                                // текущий счёт
 
-  const generateProblem = () => {
-    const num1 = Math.floor(Math.random() * 50) + 1;
-    const num2 = Math.floor(Math.random() * 50) + 1;
-    const operators = ["+", "-", "*", "/"];
-    const operator = operators[Math.floor(Math.random() * operators.length)];
+  // Текущий пример
+  const [problem, setProblem] = useState("");                           // текст примера
+  const [correctAnswer, setCorrectAnswer] = useState(0);                // правильный ответ
+  const [userAnswer, setUserAnswer] = useState("");                     // ввод пользователя               
 
-    let answer;
-    if (operator === "/") {
-      const quotient = Math.floor(Math.random() * 10) + 1;
-      const newNum1 = num2 * quotient;
-      setProblem(`${newNum1} / ${num2}`);
-      answer = quotient;
-    } else if (operator === "-") {
-      const maxNum = Math.max(num1, num2);
-      const minNum = Math.min(num1, num2);
-      setProblem(`${maxNum} - ${minNum}`);
-      answer = maxNum - minNum;
-    } else {
-      setProblem(`${num1} ${operator} ${num2}`);
-      answer = eval(`${num1} ${operator} ${num2}`);
-    }
+  // Прочее
+  const [isGameOver, setIsGameOver] = useState(false);                  // флаг, что игра окончена
+  const [answerStartTime, setAnswerStartTime] = useState(0);            // время начала ввода ответа (для бонуса за скорость)
+  const [isStartModalVisible, setIsStartModalVisible] = useState(true); // видимость стартовой модалки
+  const [settings, setSettings] = useState<Settings | null>(null);      // загруженные настройки
 
-    setCorrectAnswer(answer);
-    setAnswerStartTime(Date.now());
-    return answer;
+  // Загружаем настройки один раз и ставим длительность раунда
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const s = await loadSettings();
+      if (alive) {
+        setSettings(s);
+        setTimeLeft(s.durationSec);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  // Генерация целочисленного случайного числа
+  const randInt = (min: number, max: number) => {
+    const lo = Math.min(min, max), hi = Math.max(min, max);
+    return Math.floor(Math.random() * (hi - lo + 1)) + lo;
   };
 
+  // Выбор операции по включенным настройкам
+  const pickOp = (ops: Settings['ops']): '+' | '-' | '*' | '/' => {
+    const list = [
+      ops.add ? '+' : null,
+      ops.sub ? '-' : null,
+      ops.mul ? '*' : null,
+      ops.div ? '/' : null,
+    ].filter((x): x is '+' | '-' | '*' | '/' => x !== null);
+
+    return list.length ? list[Math.floor(Math.random() * list.length)] : '+';
+  };
+
+  // Генерируем пример: без eval, деление даёт целый ответ, разность неотрицательная
+  const generateProblem = useCallback(() => {
+    const s = settings ?? { rangeMin: 1, rangeMax: 50, ops: { add: true, sub: true, mul: true, div: true } } as Settings;
+    const op = pickOp(s.ops);
+
+    let a = randInt(s.rangeMin, s.rangeMax);
+    let b = randInt(s.rangeMin, s.rangeMax);
+
+    if (op === '-') {
+      if (b > a) [a, b] = [b, a]; // избегаем отрицательных результатов
+    } else if (op === '/') {
+      // Хотим целый ответ: a = b * q
+      b = Math.max(1, randInt(s.rangeMin, s.rangeMax));
+      const q = randInt(Math.max(1, s.rangeMin), Math.max(1, s.rangeMax));
+      a = b * q;  
+    }
+
+    const correct =
+      op === '+' ? a + b :
+        op === '-' ? a - b :
+          op === '*' ? a * b :
+            a / b;
+
+    setProblem(`${a} ${op} ${b}`);
+    setCorrectAnswer(correct);
+    setAnswerStartTime(Date.now());
+    return correct;
+  }, [settings]);
+
+  // Старт: обратный отсчёт -> скрываем модалку -> запускаем игру и первый пример
   useEffect(() => {
+    if (!settings) return;
+
     if (countdown > 0 && isStartModalVisible) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
+      const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+      return () => clearTimeout(t);
     } else if (countdown === 0 && !isGameStarted) {
       setIsStartModalVisible(false);
       setIsGameStarted(true);
       generateProblem();
     }
-  }, [countdown, isGameStarted, isStartModalVisible]);
+  }, [countdown, isGameStarted, isStartModalVisible, settings, generateProblem]);
 
+  // Таймер раунда и завершение игры
   useEffect(() => {
     if (isGameStarted && timeLeft > 0 && !isGameOver) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
+      const t = setTimeout(() => setTimeLeft((sec) => sec - 1), 1000);
+      return () => clearTimeout(t);
     } else if (timeLeft === 0) {
       setIsGameOver(true);
     }
   }, [timeLeft, isGameStarted, isGameOver]);
 
+  // Обработка ответа пользователя
   const handleSubmit = () => {
+    const trimmed = userAnswer.trim();
+    if (!trimmed) return;
+
     const answerTime = (Date.now() - answerStartTime) / 1000;
-    const isCorrect = parseFloat(userAnswer) === correctAnswer;
+    const isCorrect = parseFloat(trimmed) === correctAnswer;
 
-    if (isCorrect) {
-      setScore(score + 10);
-      if (answerTime < 5) setScore(score + 12);
-    } else {
-      setScore(score - 5);
-    }
+    // Бонус за скорость: если ответ <5 сек (+12 очков суммарно)
+    const bonus = isCorrect && answerTime < 5 ? 12 : 0;
+    const delta = isCorrect ? 10 + bonus : -5;
 
+    setScore((prev) => prev + delta);
     setUserAnswer("");
     generateProblem();
   };
 
+  // Обработка пропуска примера (-2 очка)
   const handleSkip = () => {
-    setScore(score - 2);
+    setScore((prev) => prev - 2);
     setUserAnswer("");
     generateProblem();
   };
 
+  // Перезапуск игры: сбрасываем всё и возвращаемся к стартовой модалке
   const handleRestart = () => {
     setIsGameOver(false);
     setIsGameStarted(false);
     setCountdown(3);
-    setTimeLeft(60);
+    setTimeLeft(settings?.durationSec ?? 60);
     setScore(0);
     setUserAnswer("");
     setProblem("");
@@ -107,6 +156,14 @@ export default function GameScreen() {
     setAnswerStartTime(0);
     setIsStartModalVisible(true);
   };
+
+  // Сохраняем результат в таблицу рекордов при закрытии финальной модалки
+  useEffect(() => {
+    if (!isGameOver) return;
+    (async () => {
+      await addHighscore({ date: new Date().toISOString(), score });
+    })();
+  }, [isGameOver, score]);
 
   return (
     <KeyboardAvoidingView
@@ -176,9 +233,9 @@ export default function GameScreen() {
           </View>
         )}
 
-        {/* Модалка с итоговой статистикой */}
+        {/* Финальная модалка с итоговой статистикой */}
         <Modal isVisible={isGameOver}>
-        <Animated.View
+          <Animated.View
             entering={FadeIn.duration(500)}
             exiting={FadeOut.duration(500)}
             style={styles.modalContent}
@@ -186,7 +243,7 @@ export default function GameScreen() {
             <FontAwesome5
               name="trophy"
               size={48}
-              color="#636b2f"
+              color="#6366f1"
               style={styles.modalIcon}
             />
             <StyledText variant="title">Игра окончена!</StyledText>
@@ -214,6 +271,7 @@ export default function GameScreen() {
   );
 }
 
+// Стили для данного экрана
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -240,17 +298,17 @@ const styles = StyleSheet.create({
   input: {
     width: "80%",
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
+    borderColor: "#c8c8c8",
+    borderRadius: 16,
     padding: 12,
     fontSize: 18,
     textAlign: "center",
     marginBottom: 24,
     backgroundColor: "#fff",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
     elevation: 3,
   },
   buttonContainer: {
@@ -271,7 +329,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   modalContentStart: {
-    backgroundColor: "#636b2f",
+    backgroundColor: "#6366f1",
     padding: 24,
     borderRadius: 15,
     alignItems: "center",
