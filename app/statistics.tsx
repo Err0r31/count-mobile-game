@@ -144,7 +144,7 @@ export default function StatisticsScreen() {
             variant="primary"
             label="Назад"
             iconName="arrow-left"
-            onPress={() => router.back()}
+            onPress={() => router.push("/highscores")}
           />
         </Animated.View>
       </ScrollView>

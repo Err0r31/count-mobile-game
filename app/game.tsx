@@ -3,6 +3,7 @@ import StyledText from "@/components/StyledText"; // единый стиль т�
 import { addHighscore, loadSettings, type Settings } from "@/storage"; // функции для работы с настройками и рекордами
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5"; // иконки из библиотеки FontAwesome
 import { Audio } from "expo-av";
+import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router"; // хук для переходов между экранами
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -14,8 +15,18 @@ import {
   View,
 } from "react-native";
 import Modal from "react-native-modal"; // библиотека для модальных окон (старт, финиш)
-import Animated, { BounceIn, FadeIn, FadeInUp, FadeOut, SlideInLeft } from "react-native-reanimated"; // анимации для модалок (появления/скрытия)
-import { theme } from "../ui"; // современная тема
+import Animated, {
+  BounceIn,
+  FadeIn,
+  FadeInUp,
+  FadeOut,
+  SlideInLeft,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated"; // анимации для модалок (появления/скрытия)
+import { theme } from "../ui";
 
 export default function GameScreen() {
   const router = useRouter();
@@ -43,6 +54,23 @@ export default function GameScreen() {
   
   // Визуальная обратная связь через цвет рамки
   const [borderColor, setBorderColor] = useState(theme.colors.border);
+
+  // Анимация встряхивания для неверного ответа
+  const shakeOffset = useSharedValue(0);
+  const shakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeOffset.value }],
+  }));
+
+  // Функция для запуска анимации встряхивания
+  const triggerShake = () => {
+    shakeOffset.value = withSequence(
+      withTiming(-10, { duration: 100 }),
+      withTiming(10, { duration: 100 }),
+      withTiming(-10, { duration: 100 }),
+      withTiming(10, { duration: 100 }),
+      withTiming(0, { duration: 100 })
+    );
+  };
 
   // Загружаем настройки один раз и ставим длительность раунда
   useEffect(() => {
@@ -132,21 +160,21 @@ export default function GameScreen() {
   };
 
   // Показать визуальную обратную связь через цвет рамки
-  const showBorderFeedback = (type: 'correct' | 'wrong' | 'skip') => {
+  const showBorderFeedback = (type: "correct" | "wrong" | "skip") => {
     let color = theme.colors.border;
-    
+
     switch (type) {
-      case 'correct':
+      case "correct":
         color = theme.colors.success;
         break;
-      case 'wrong':
+      case "wrong":
         color = theme.colors.error;
         break;
-      case 'skip':
+      case "skip":
         color = theme.colors.warning;
         break;
     }
-    
+
     setBorderColor(color);
     // Вернуть обычный цвет через 1 секунду
     setTimeout(() => setBorderColor(theme.colors.border), 1000);
@@ -221,13 +249,21 @@ export default function GameScreen() {
 
     const answerTime = (Date.now() - answerStartTime) / 1000;
     const isCorrect = parseFloat(trimmed) === correctAnswer;
+    if (Platform.OS === "ios") {
+      if (isCorrect) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        triggerShake();
+      }
+    }
 
     // Бонус за скорость: если ответ <5 сек (+12 очков суммарно)
     const bonus = isCorrect && answerTime < 5 ? 2 : 0;
     const delta = isCorrect ? 10 + bonus : -5;
 
     // Показать визуальную обратную связь
-    showBorderFeedback(isCorrect ? 'correct' : 'wrong');
+    showBorderFeedback(isCorrect ? "correct" : "wrong");
 
     setScore((prev) => prev + delta);
     setUserAnswer("");
@@ -236,7 +272,10 @@ export default function GameScreen() {
 
   // Обработка пропуска примера (-2 очка)
   const handleSkip = () => {
-    showBorderFeedback('skip');
+    if (Platform.OS === "ios") {
+      Haptics.selectionAsync();
+    }
+    showBorderFeedback("skip");
     setScore((prev) => prev - 2);
     setUserAnswer("");
     generateProblem();
@@ -263,7 +302,7 @@ export default function GameScreen() {
   useEffect(() => {
     if (!isGameOver) return;
     (async () => {
-      await addHighscore({ date: new Date().toISOString(), score });
+        await addHighscore({ date: new Date().toISOString(), score });
     })();
   }, [isGameOver, score]);
 
@@ -298,22 +337,32 @@ export default function GameScreen() {
 
         {/* Основной экран игры */}
         {isGameStarted && !isGameOver && (
-          <Animated.View entering={FadeInUp.duration(600)} style={styles.gameContent}>
-            <Animated.View entering={SlideInLeft.duration(400).delay(100)} style={styles.gameInfo}>
+          <Animated.View
+            entering={FadeInUp.duration(600)}
+            style={styles.gameContent}
+          >
+            <Animated.View
+              entering={SlideInLeft.duration(400).delay(100)}
+              style={styles.gameInfo}
+            >
               <StyledText variant="regular" style={styles.timer}>
-                ⏰ Время: <StyledText variant="highlight">{timeLeft}с</StyledText>
+                ⏰ Время:{" "}
+                <StyledText variant="highlight">{timeLeft}с</StyledText>
               </StyledText>
               <StyledText variant="regular" style={styles.score}>
                 🎯 Очки: <StyledText variant="highlight">{score}</StyledText>
               </StyledText>
             </Animated.View>
-            
-            <Animated.View entering={BounceIn.duration(800).delay(200)} style={[styles.problemContainer, { borderColor }]}>
+
+            <Animated.View
+              entering={BounceIn.duration(800).delay(200)}
+              style={[styles.problemContainer, { borderColor }, shakeStyle]}
+            >
               <StyledText variant="title" style={styles.problem}>
                 {problem}
               </StyledText>
             </Animated.View>
-            
+
             <Animated.View entering={FadeInUp.duration(600).delay(300)}>
               <TextInput
                 style={styles.input}
@@ -327,8 +376,11 @@ export default function GameScreen() {
                 autoFocus={true}
               />
             </Animated.View>
-            
-            <Animated.View entering={FadeInUp.duration(600).delay(400)} style={styles.buttonContainer}>
+
+            <Animated.View
+              entering={FadeInUp.duration(600).delay(400)}
+              style={styles.buttonContainer}
+            >
               <StyledButton
                 variant="skip"
                 label="Пропустить"
