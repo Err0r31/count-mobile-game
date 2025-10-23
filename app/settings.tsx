@@ -1,23 +1,25 @@
 import StyledButton from "@/components/StyledButton"; // единый стиль кнопок проекта
 import StyledText from "@/components/StyledText"; // единый стиль текста проекта
 import {
-    defaultSettings,
-    loadSettings,
-    saveSettings,
-    type Settings,
+  defaultSettings,
+  loadSettings,
+  saveSettings,
+  type Settings,
 } from "@/storage"; // функции для работы с настройками
+import { theme } from "@/ui"; // тема
 import { useRouter } from "expo-router"; // хук для переходов между экранами
 import React, { useEffect, useState } from "react"; // хуки состояния и жизненного цикла
 import {
-    Alert,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    View,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 
 /* Экран настроек игры */
 export default function SettingsScreen() {
@@ -77,82 +79,120 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <StyledText variant="title" style={styles.title}>
-        Настройки игры
-      </StyledText>
+    <ScrollView
+      style={styles.scrollView}
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
+      <Animated.View entering={FadeInDown.duration(600)}>
+        <StyledText variant="title" style={styles.title}>
+          Настройки игры
+        </StyledText>
+      </Animated.View>
 
       {/* Длительность раунда*/}
-      <View style={styles.group}>
-        <Text style={styles.label}>Длительность (сек)</Text>
+      <Animated.View
+        entering={FadeInUp.duration(600).delay(100)}
+        style={styles.group}
+      >
+        <StyledText variant="regular" style={styles.label}>
+          Длительность (сек)
+        </StyledText>
         <TextInput
           style={styles.input}
           keyboardType="number-pad"
           value={String(settings.durationSec)}
           onChangeText={(t) => setNum("durationSec", t)}
         />
-      </View>
+      </Animated.View>
 
       {/* Диапазон ОТ */}
-      <View style={styles.group}>
-        <Text style={styles.label}>Диапазон: от</Text>
+      <Animated.View
+        entering={FadeInUp.duration(600).delay(200)}
+        style={styles.group}
+      >
+        <StyledText variant="regular" style={styles.label}>
+          Диапазон: от
+        </StyledText>
         <TextInput
           style={styles.input}
           keyboardType="number-pad"
           value={String(settings.rangeMin)}
           onChangeText={(t) => setNum("rangeMin", t)}
         />
-      </View>
+      </Animated.View>
 
       {/* Диапазон ДО */}
-      <View style={styles.group}>
-        <Text style={styles.label}>Диапазон: до</Text>
+      <Animated.View
+        entering={FadeInUp.duration(600).delay(300)}
+        style={styles.group}
+      >
+        <StyledText variant="regular" style={styles.label}>
+          Диапазон: до
+        </StyledText>
         <TextInput
           style={styles.input}
           keyboardType="number-pad"
           value={String(settings.rangeMax)}
           onChangeText={(t) => setNum("rangeMax", t)}
         />
-      </View>
+      </Animated.View>
 
       {/* Выбор математических операций */}
-      <Text style={[styles.label, { marginTop: 8 }]}>Операции</Text>
-      <View style={styles.opsGrid}>
-        <OpCard
-          icon="+"
-          label="Сложение"
-          value={settings.ops.add}
-          onToggle={(v) => toggleOp("add", v)}
-        />
-        <OpCard
-          icon="−"
-          label="Вычитание"
-          value={settings.ops.sub}
-          onToggle={(v) => toggleOp("sub", v)}
-        />
-        <OpCard
-          icon="×"
-          label="Умножение"
-          value={settings.ops.mul}
-          onToggle={(v) => toggleOp("mul", v)}
-        />
-        <OpCard
-          icon="÷"
-          label="Деление"
-          value={settings.ops.div}
-          onToggle={(v) => toggleOp("div", v)}
-        />
-      </View>
-      <View style={styles.group}>
-        <Text style={styles.label}>Музыка</Text>
+      <Animated.View entering={FadeInUp.duration(600).delay(400)}>
+        <StyledText
+          variant="regular"
+          style={[styles.label, { marginTop: theme.spacing.md }]}
+        >
+          Операции
+        </StyledText>
+        <View style={styles.opsGrid}>
+          <OpCard
+            icon="+"
+            label="Сложение"
+            value={settings.ops.add}
+            onToggle={(v) => toggleOp("add", v)}
+          />
+          <OpCard
+            icon="−"
+            label="Вычитание"
+            value={settings.ops.sub}
+            onToggle={(v) => toggleOp("sub", v)}
+          />
+          <OpCard
+            icon="×"
+            label="Умножение"
+            value={settings.ops.mul}
+            onToggle={(v) => toggleOp("mul", v)}
+          />
+          <OpCard
+            icon="÷"
+            label="Деление"
+            value={settings.ops.div}
+            onToggle={(v) => toggleOp("div", v)}
+          />
+        </View>
+      </Animated.View>
+
+      <Animated.View
+        entering={FadeInUp.duration(600).delay(500)}
+        style={styles.group}
+      >
+        <StyledText variant="regular" style={styles.label}>
+          Музыка
+        </StyledText>
         <Switch
           style={styles.switch}
           value={settings.soundEnabled}
           onValueChange={toggleSound}
-          thumbColor={undefined}
+          thumbColor={theme.colors.primary}
+          trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
         />
-      </View>
-      <StyledButton label="Сохранить" onPress={onSave} disabled={busy} />
+      </Animated.View>
+
+      <Animated.View entering={FadeInUp.duration(600).delay(600)}>
+        <StyledButton label="Сохранить" onPress={onSave} disabled={busy} />
+      </Animated.View>
     </ScrollView>
   );
 }
@@ -188,111 +228,103 @@ function OpCard({
         style={styles.opSwitch}
         value={value}
         onValueChange={onToggle}
-        thumbColor={undefined}
+        thumbColor={theme.colors.primary}
+        trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
       />
     </Pressable>
   );
 }
 
-// Cтили для данного экрана
+// Стили с современной темой
 const styles = StyleSheet.create({
-  container: {
+  scrollView: {
     flex: 1,
-    padding: 20,
-    gap: 12,
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.background,
+  },
+  container: {
+    padding: theme.spacing.lg,
+    gap: theme.spacing.md,
+    paddingBottom: theme.spacing.xxl,
+    minHeight: "100%",
   },
   title: {
-    marginBottom: 30,
+    marginBottom: theme.spacing.xl,
     textAlign: "center",
   },
   group: {
     width: "100%",
     alignSelf: "stretch",
-    marginBottom: 10,
+    marginBottom: theme.spacing.md,
   },
   label: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 6,
-  },
-  smallLabel: {
-    fontSize: 16,
-    marginBottom: 6,
+    marginBottom: theme.spacing.sm,
+    color: theme.colors.textPrimary,
+    fontWeight: "600" as const,
   },
   input: {
     width: "100%",
-    borderWidth: 1,
-    borderColor: "#c8c8c8",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.lg,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
     fontSize: 16,
     textAlign: "center",
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+    backgroundColor: theme.colors.backgroundLight,
+    color: theme.colors.textPrimary,
+    ...theme.shadows.medium,
   },
-
-  // Операции
   opsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 12,
-    marginBottom: 6,
   },
   opCard: {
     position: "relative",
-    flexBasis: "48%",
-    borderWidth: 1,
-    borderColor: "#c8c8c8",
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 14,
-    paddingTop: 18,
-    marginBottom: 12,
-    // Тень iOS
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+    width: "48%",
+    marginBottom: theme.spacing.md,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.backgroundLight,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    paddingTop: theme.spacing.lg,
+    ...theme.shadows.medium,
   },
   opCardActive: {
-    borderColor: "#6366f1",
-    backgroundColor: "#eef2ff",
+    borderColor: theme.colors.accent,
+    backgroundColor: theme.colors.backgroundLight,
   },
   opCardPressed: {
     transform: [{ scale: 0.98 }],
   },
   opIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#919191ff",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
-    backgroundColor: "#fff",
+    marginBottom: theme.spacing.sm,
+    backgroundColor: theme.colors.backgroundLight,
   },
   opIcon: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 20,
+    fontWeight: "bold" as const,
+    color: theme.colors.textPrimary,
   },
   opLabel: {
-    fontSize: 15,
-    fontWeight: "600",
-    marginRight: 44,
+    fontSize: 16,
+    fontWeight: "600" as const,
+    marginRight: 50,
+    color: theme.colors.textPrimary,
   },
   opSwitch: {
     position: "absolute",
-    top: 10,
-    right: 10,
+    top: theme.spacing.sm,
+    right: theme.spacing.sm,
   },
-
   switch: {
     alignSelf: "flex-start",
   },

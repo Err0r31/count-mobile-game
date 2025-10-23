@@ -1,4 +1,5 @@
 import { StyleSheet, Text, TextProps } from "react-native";
+import { theme } from "../ui";
 
 // Пропсы: наследуем стандартные TextProps + свой вариант отображения
 type StyledTextProps = TextProps & {
@@ -29,27 +30,21 @@ export default function StyledText({
 // Общий базовый стиль + пресеты для заголовков, обычного текста, акцента и текста на кнопках
 const styles = StyleSheet.create({
   base: {
-    color: "#000000",
+    color: theme.colors.textPrimary,
+    fontFamily: "System",
   },
   title: {
-    fontSize: 32,
-    lineHeight: 36,
-    fontWeight: "bold",
+    ...theme.typography.h1,
   },
   regular: {
-    fontSize: 16,
-    lineHeight: 20,
+    ...theme.typography.bodyLarge,
   },
   highlight: {
-    fontSize: 16,
-    lineHeight: 20,
-    fontWeight: "bold",
-    color: "#6366f1",
+    ...theme.typography.bodyLarge,
+    fontWeight: "bold" as const,
+    color: theme.colors.accent,
   },
   button: {
-    fontSize: 18,
-    lineHeight: 22,
-    fontWeight: "600",
-    color: "#fff",
+    ...theme.typography.button,
   },
 });

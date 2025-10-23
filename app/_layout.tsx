@@ -1,3 +1,4 @@
+import { theme } from "@/ui";
 import { Stack, useRouter } from "expo-router";
 import { StatusBar, Text, TouchableOpacity } from "react-native";
 
@@ -13,8 +14,8 @@ export default function RootLayout() {
       />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: "#6366f1" },               
-          headerTitleStyle: { fontWeight: "bold", color: "#ffffff" }, 
+          headerStyle: { backgroundColor: theme.colors.primary },               
+          headerTitleStyle: { fontWeight: "bold", color: theme.colors.textOnPrimary }, 
           headerBackVisible: false,                                    
         }}
       >
@@ -25,7 +26,7 @@ export default function RootLayout() {
             headerLeft: () => null,
             headerTitle: () => (
               <TouchableOpacity onPress={() => router.push('/')} activeOpacity={0.7}>
-                <Text style={{ fontWeight: "bold", color: "#ffffff", fontSize: 18 }}>
+                <Text style={{ fontWeight: "bold", color: theme.colors.textOnPrimary, fontSize: 18 }}>
                   Быстрый счет
                 </Text>
               </TouchableOpacity>
@@ -39,7 +40,7 @@ export default function RootLayout() {
             headerLeft: () => null,
             headerTitle: () => (
               <TouchableOpacity onPress={() => router.push('/')} activeOpacity={0.7}>
-                <Text style={{ fontWeight: "bold", color: "#ffffff", fontSize: 18 }}>
+                <Text style={{ fontWeight: "bold", color: theme.colors.textOnPrimary, fontSize: 18 }}>
                   Игра
                 </Text>
               </TouchableOpacity>
@@ -53,7 +54,7 @@ export default function RootLayout() {
             headerLeft: () => null,
             headerTitle: () => (
               <TouchableOpacity onPress={() => router.push('/')} activeOpacity={0.7}>
-                <Text style={{ fontWeight: "bold", color: "#ffffff", fontSize: 18 }}>
+                <Text style={{ fontWeight: "bold", color: theme.colors.textOnPrimary, fontSize: 18 }}>
                   Рекорды
                 </Text>
               </TouchableOpacity>
@@ -67,7 +68,7 @@ export default function RootLayout() {
             headerLeft: () => null,
             headerTitle: () => (
               <TouchableOpacity onPress={() => router.push('/')} activeOpacity={0.7}>
-                <Text style={{ fontWeight: "bold", color: "#ffffff", fontSize: 18 }}>
+                <Text style={{ fontWeight: "bold", color: theme.colors.textOnPrimary, fontSize: 18 }}>
                   Правила
                 </Text>
               </TouchableOpacity>
@@ -81,7 +82,7 @@ export default function RootLayout() {
             headerLeft: () => null,
             headerTitle: () => (
               <TouchableOpacity onPress={() => router.push('/')} activeOpacity={0.7}>
-                <Text style={{ fontWeight: "bold", color: "#ffffff", fontSize: 18 }}>
+                <Text style={{ fontWeight: "bold", color: theme.colors.textOnPrimary, fontSize: 18 }}>
                   Настройки
                 </Text>
               </TouchableOpacity>
@@ -95,8 +96,22 @@ export default function RootLayout() {
             headerLeft: () => null,
             headerTitle: () => (
               <TouchableOpacity onPress={() => router.push('/')} activeOpacity={0.7}>
-                <Text style={{ fontWeight: "bold", color: "#ffffff", fontSize: 18 }}>
+                <Text style={{ fontWeight: "bold", color: theme.colors.textOnPrimary, fontSize: 18 }}>
                   Мультимедиа
+                </Text>
+              </TouchableOpacity>
+            )
+          }}
+        />
+        <Stack.Screen
+          name="statistics"
+          options={{ 
+            title: "Статистика", 
+            headerLeft: () => null,
+            headerTitle: () => (
+              <TouchableOpacity onPress={() => router.push('/')} activeOpacity={0.7}>
+                <Text style={{ fontWeight: "bold", color: theme.colors.textOnPrimary, fontSize: 18 }}>
+                  Статистика
                 </Text>
               </TouchableOpacity>
             )

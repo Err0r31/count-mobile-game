@@ -1,108 +1,137 @@
-import StyledButton from "@/components/StyledButton";       // единый стиль кнопок проекта
-import StyledText from "@/components/StyledText";           // единый стиль текста проекта
+import StyledButton from "@/components/StyledButton"; // единый стиль кнопок проекта
+import StyledText from "@/components/StyledText"; // единый стиль текста проекта
+import { theme } from "@/ui"; // тема
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5"; // иконки из библиотеки FontAwesome
-import { useRouter } from "expo-router";                    // хук для переходов между экранами 
-import { StyleSheet, View } from "react-native";
+import { useRouter } from "expo-router"; // хук для переходов между экранами 
+import { ScrollView, StyleSheet, View } from "react-native";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 
 export default function RuleScreen() {
   const router = useRouter(); // переходы между экранами
 
   return (
-    <View style={styles.container}>
-      {/* Заголовок экрана */}
-      <StyledText variant="title" style={styles.title}>Правила игры</StyledText>
+    <ScrollView 
+      style={styles.scrollView}
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
+      <Animated.View entering={FadeInDown.duration(600)}>
+        <StyledText variant="title" style={styles.title}>
+          📖 Правила игры
+        </StyledText>
+      </Animated.View>
 
       {/* Список правил: иконка + текст */}
       <View style={styles.rulesList}>
-        <View style={styles.ruleItem}>
-          <View style={styles.iconContainer}>
-            <FontAwesome5 name="bullseye" size={24} color="#333" />
+        <Animated.View entering={FadeInUp.duration(600).delay(100)} style={styles.ruleItem}>
+          <View style={[styles.iconContainer, { backgroundColor: theme.colors.accent }]}>
+            <FontAwesome5 name="bullseye" size={24} color={theme.colors.textOnPrimary} />
           </View>
-          <StyledText variant="regular">
+          <StyledText variant="regular" style={styles.ruleText}>
             Решайте как можно больше математических примеров за 60 секунд!
           </StyledText>
-        </View>
+        </Animated.View>
 
-        <View style={styles.ruleItem}>
-          <View style={styles.iconContainer}>
-            <FontAwesome5 name="check-circle" size={24} color="#333" />
+        <Animated.View entering={FadeInUp.duration(600).delay(200)} style={styles.ruleItem}>
+          <View style={[styles.iconContainer, { backgroundColor: theme.colors.success }]}>
+            <FontAwesome5 name="check-circle" size={24} color={theme.colors.textOnPrimary} />
           </View>
-          <StyledText variant="regular">
+          <StyledText variant="regular" style={styles.ruleText}>
             Правильный ответ: <StyledText variant="highlight">+10 очков</StyledText>.
           </StyledText>
-        </View>
+        </Animated.View>
 
-        <View style={styles.ruleItem}>
-          <View style={styles.iconContainer}>
-            <FontAwesome5 name="times-circle" size={24} color="#333" />
+        <Animated.View entering={FadeInUp.duration(600).delay(300)} style={styles.ruleItem}>
+          <View style={[styles.iconContainer, { backgroundColor: theme.colors.error }]}>
+            <FontAwesome5 name="times-circle" size={24} color={theme.colors.textOnPrimary} />
           </View>
-          <StyledText variant="regular">
+          <StyledText variant="regular" style={styles.ruleText}>
             Ошибка: <StyledText variant="highlight">-5 очков</StyledText>.
           </StyledText>
-        </View>
+        </Animated.View>
 
-        <View style={styles.ruleItem}>
-          <View style={styles.iconContainer}>
-            <FontAwesome5 name="bolt" size={24} color="#333" />
+        <Animated.View entering={FadeInUp.duration(600).delay(400)} style={styles.ruleItem}>
+          <View style={[styles.iconContainer, { backgroundColor: theme.colors.warning }]}>
+            <FontAwesome5 name="bolt" size={24} color={theme.colors.textOnPrimary} />
           </View>
-          <StyledText variant="regular">
+          <StyledText variant="regular" style={styles.ruleText}>
             Быстрый ответ (менее 5 секунд): <StyledText variant="highlight">+2 очка</StyledText>.
           </StyledText>
-        </View>
+        </Animated.View>
 
-        <View style={styles.ruleItem}>
-          <View style={styles.iconContainer}>
-            <FontAwesome5 name="clock" size={24} color="#333" />
+        <Animated.View entering={FadeInUp.duration(600).delay(500)} style={styles.ruleItem}>
+          <View style={[styles.iconContainer, { backgroundColor: theme.colors.info }]}>
+            <FontAwesome5 name="clock" size={24} color={theme.colors.textOnPrimary} />
           </View>
-          <StyledText variant="regular">
+          <StyledText variant="regular" style={styles.ruleText}>
             Время: <StyledText variant="highlight">60 секунд</StyledText>. После окончания вы увидите свой счёт.
           </StyledText>
-        </View>
+        </Animated.View>
 
-        <View style={styles.ruleItem}>
-          <View style={styles.iconContainer}>
-            <FontAwesome5 name="forward" size={24} color="#333" />
+        <Animated.View entering={FadeInUp.duration(600).delay(600)} style={styles.ruleItem}>
+          <View style={[styles.iconContainer, { backgroundColor: theme.colors.textSecondary }]}>
+            <FontAwesome5 name="forward" size={24} color={theme.colors.textOnPrimary} />
           </View>
-          <StyledText variant="regular">
+          <StyledText variant="regular" style={styles.ruleText}>
             Пропуск примера: <StyledText variant="highlight">-2 очка</StyledText>.
           </StyledText>
-        </View>
+        </Animated.View>
       </View>
 
       {/* Кнопка внизу — вернуть пользователя на предыдущий экран */}
-      <StyledButton
-        variant="primary"
-        label="Назад"
-        iconName="arrow-left"
-        onPress={() => router.back()}
-      />
-    </View>
+      <Animated.View entering={FadeInUp.duration(600).delay(700)}>
+        <StyledButton
+          variant="primary"
+          label="Назад"
+          iconName="arrow-left"
+          onPress={() => router.push('/')}
+        />
+      </Animated.View>
+    </ScrollView>
   );
 }
-// Стили для данного экрана
+// Стили с современной темой
 const styles = StyleSheet.create({
-  container: {
+  scrollView: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    padding: 20,
+    backgroundColor: theme.colors.background,
+  },
+  container: {
+    padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.xxl,
+    minHeight: "100%",
   },
   title: {
-    marginBottom: 30,
+    marginBottom: theme.spacing.xl,
+    textAlign: "center",
   },
   rulesList: {
     width: "100%",
-    marginBottom: 30,
+    marginBottom: theme.spacing.xl,
   },
   ruleItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15,
-    paddingHorizontal: 10,
+    marginBottom: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.backgroundLight,
+    borderRadius: theme.borderRadius.lg,
+    ...theme.shadows.small,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   iconContainer: {
-    width: 35,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     alignItems: "center",
+    justifyContent: "center",
+    marginRight: theme.spacing.md,
+    ...theme.shadows.small,
+  },
+  ruleText: {
+    flex: 1,
+    lineHeight: 24,
   },
 });
