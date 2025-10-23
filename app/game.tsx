@@ -197,10 +197,11 @@ export default function GameScreen() {
     if (op === "-") {
       if (b > a) [a, b] = [b, a]; // избегаем отрицательных результатов
     } else if (op === "/") {
-      // Хотим целый ответ: a = b * q
-      b = Math.max(1, randInt(s.rangeMin, s.rangeMax));
-      const q = randInt(Math.max(1, s.rangeMin), Math.max(1, s.rangeMax));
-      a = b * q;
+      b = randInt(s.rangeMin, s.rangeMax);
+      const max_k = Math.floor(s.rangeMax / b);
+      const min_k = Math.ceil(s.rangeMin / b);
+      const k = randInt(Math.max(1, min_k), max_k);
+      a = b * k;
     }
 
     const correct =
