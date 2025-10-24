@@ -12,6 +12,7 @@ import {
   ScrollView,
   StyleSheet,
   TextInput,
+  Vibration,
   View,
 } from "react-native";
 import Modal from "react-native-modal"; // библиотека для модальных окон (старт, финиш)
@@ -51,7 +52,7 @@ export default function GameScreen() {
   const [answerStartTime, setAnswerStartTime] = useState(0); // время начала ввода ответа (для бонуса за скорость)
   const [isStartModalVisible, setIsStartModalVisible] = useState(true); // видимость стартовой модалки
   const [settings, setSettings] = useState<Settings | null>(null); // загруженные настройки
-  
+
   // Визуальная обратная связь через цвет рамки
   const [borderColor, setBorderColor] = useState(theme.colors.border);
 
@@ -257,6 +258,12 @@ export default function GameScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         triggerShake();
       }
+    } else if (Platform.OS === "android") {
+      if (isCorrect) {
+        Vibration.vibrate(100);
+      } else {
+        Vibration.vibrate([0, 100, 50, 100]);
+      }
     }
 
     // Бонус за скорость: если ответ <5 сек (+12 очков суммарно)
@@ -275,6 +282,8 @@ export default function GameScreen() {
   const handleSkip = () => {
     if (Platform.OS === "ios") {
       Haptics.selectionAsync();
+    } else if (Platform.OS === "android") {
+      Vibration.vibrate(50);
     }
     showBorderFeedback("skip");
     setScore((prev) => prev - 2);
@@ -303,7 +312,7 @@ export default function GameScreen() {
   useEffect(() => {
     if (!isGameOver) return;
     (async () => {
-        await addHighscore({ date: new Date().toISOString(), score });
+      await addHighscore({ date: new Date().toISOString(), score });
     })();
   }, [isGameOver, score]);
 
@@ -373,6 +382,14 @@ export default function GameScreen() {
                 placeholder="Ваш ответ"
                 placeholderTextColor={theme.colors.textSecondary}
                 onSubmitEditing={handleSubmit}
+                onKeyPress={({ nativeEvent }) => {
+                  if (
+                    nativeEvent.key === "Enter" &&
+                    Platform.OS === "android"
+                  ) {
+                    handleSubmit();
+                  }
+                }}
                 blurOnSubmit={false}
                 autoFocus={true}
               />
