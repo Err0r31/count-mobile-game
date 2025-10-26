@@ -154,7 +154,6 @@ export default function GameScreen() {
     setProblem("");
     setCorrectAnswer(0);
     setAnswerStartTime(0);
-    setIsStartModalVisible(true);
   };
 
   // Сохраняем результат в таблицу рекордов при закрытии финальной модалки
@@ -234,7 +233,11 @@ export default function GameScreen() {
         )}
 
         {/* Финальная модалка с итоговой статистикой */}
-        <Modal isVisible={isGameOver}>
+        <Modal isVisible={isGameOver} onModalHide={() => {
+            // если мы только что нажали "Играть снова", isGameOver уже false
+            // безопасно показать стартовую
+            setIsStartModalVisible(true);
+        }}>
           <Animated.View
             entering={FadeIn.duration(500)}
             exiting={FadeOut.duration(500)}
