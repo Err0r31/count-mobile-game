@@ -417,7 +417,11 @@ export default function GameScreen() {
         )}
 
         {/* Финальная модалка с итоговой статистикой */}
-        <Modal isVisible={isGameOver} onModalHide={() => {setIsStartModalVisible(true)}}>
+        <Modal isVisible={isGameOver} onModalHide={() => {
+            // если мы только что нажали "Играть снова", isGameOver уже false
+            // безопасно показать стартовую
+            setIsStartModalVisible(true);
+        }}>
           <Animated.View
             entering={FadeIn.duration(500)}
             exiting={FadeOut.duration(500)}
