@@ -4,8 +4,8 @@ import {
   TouchableOpacity,
   TouchableOpacityProps,
 } from "react-native";
-import StyledText from "./StyledText";                      // единый стиль текста проекта  
-
+import { theme } from "../ui";
+import StyledText from "./StyledText"; // единый стиль текста проекта  
 // Пропсы кнопки: наследуем стандартные TouchableOpacityProps + свои поля
 type StyledButtonProps = TouchableOpacityProps & {
   label?: string;                                           // текст кнопки
@@ -17,7 +17,7 @@ type StyledButtonProps = TouchableOpacityProps & {
 export default function StyledButton({
   label,
   iconName,
-  iconSize,
+  iconSize = 18,
   variant = "primary",
   disabled,
   style,
@@ -42,7 +42,7 @@ export default function StyledButton({
         <FontAwesome5
           name={iconName}
           size={iconSize}
-          color="#fff"
+          color={theme.colors.textOnPrimary}
           style={styles.icon}
         />
       )}
@@ -52,40 +52,33 @@ export default function StyledButton({
   );
 }
 
-// Стили: базовый вид + состояния/варианты; тени (iOS), выравнивание контента
 const styles = StyleSheet.create({
   base: {
-    backgroundColor: "#6366f1",
+    backgroundColor: theme.colors.primary,
     justifyContent: "center",
     flexDirection: "row",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#6366f1",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    ...theme.shadows.medium,
   },
   disabled: {
-    opacity: 0.5,
+    opacity: 0.6,
+    backgroundColor: theme.colors.backgroundDark,
   },
   primary: {
-    backgroundColor: "#6366f1",
+    backgroundColor: theme.colors.primary,
   },
   skip: {
-    backgroundColor: "#ff6600ff",
-    borderColor: "#ff6600ff",
+    backgroundColor: theme.colors.warning,
   },
   modal: {
-    backgroundColor: "#6366f1",
+    backgroundColor: theme.colors.primary,
     flex: 1,
-    marginHorizontal: 5,
+    marginHorizontal: theme.spacing.sm,
   },
   icon: {
-    marginRight: 8,
+    marginRight: theme.spacing.sm,
   },
 });

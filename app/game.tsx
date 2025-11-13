@@ -1,39 +1,77 @@
-import StyledButton from "@/components/StyledButton";                   // единый стиль кнопок проекта
-import StyledText from "@/components/StyledText";                       // единый стиль текста проекта
-import FontAwesome5 from "@expo/vector-icons/FontAwesome5";             // иконки из библиотеки FontAwesome
-import { useRouter } from "expo-router";                                // хук для переходов между экранами 
-import React, { useCallback, useEffect, useState } from "react";
+import StyledButton from "@/components/StyledButton"; // единый стиль кнопок проекта
+import StyledText from "@/components/StyledText"; // единый стиль текста проекта
+import { addHighscore, loadSettings, type Settings } from "@/storage"; // функции для работы с настройками и рекордами
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5"; // иконки из библиотеки FontAwesome
+import { Audio } from "expo-av";
+import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router"; // хук для переходов между экранами
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   TextInput,
+  Vibration,
   View,
 } from "react-native";
-import Modal from "react-native-modal";                                 // библиотека для модальных окон (старт, финиш)
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";    // анимации для модалок (появления/скрытия)
-import { addHighscore, loadSettings, type Settings } from "@/storage";  // функции для работы с настройками и рекордами
+import Modal from "react-native-modal"; // библиотека для модальных окон (старт, финиш)
+import Animated, {
+  BounceIn,
+  FadeIn,
+  FadeInUp,
+  FadeOut,
+  SlideInLeft,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated"; // анимации для модалок (появления/скрытия)
+import { theme } from "../ui";
 
 export default function GameScreen() {
   const router = useRouter();
-  
+
+  // Состояние и реф для аудио
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null); // Для хранения объекта звука
+
   // Состояние игры
-  const [isGameStarted, setIsGameStarted] = useState(false);            // флаг, что игра началась
-  const [countdown, setCountdown] = useState(3);                        // стартовый отсчет
-  const [timeLeft, setTimeLeft] = useState(60);                         // таймер раунда
-  const [score, setScore] = useState(0);                                // текущий счёт
+  const [isGameStarted, setIsGameStarted] = useState(false); // флаг, что игра началась
+  const [countdown, setCountdown] = useState(3); // стартовый отсчет
+  const [timeLeft, setTimeLeft] = useState(60); // таймер раунда
+  const [score, setScore] = useState(0); // текущий счёт
 
   // Текущий пример
-  const [problem, setProblem] = useState("");                           // текст примера
-  const [correctAnswer, setCorrectAnswer] = useState(0);                // правильный ответ
-  const [userAnswer, setUserAnswer] = useState("");                     // ввод пользователя               
+  const [problem, setProblem] = useState(""); // текст примера
+  const [correctAnswer, setCorrectAnswer] = useState(0); // правильный ответ
+  const [userAnswer, setUserAnswer] = useState(""); // ввод пользователя
 
   // Прочее
-  const [isGameOver, setIsGameOver] = useState(false);                  // флаг, что игра окончена
-  const [answerStartTime, setAnswerStartTime] = useState(0);            // время начала ввода ответа (для бонуса за скорость)
+  const [isGameOver, setIsGameOver] = useState(false); // флаг, что игра окончена
+  const [answerStartTime, setAnswerStartTime] = useState(0); // время начала ввода ответа (для бонуса за скорость)
   const [isStartModalVisible, setIsStartModalVisible] = useState(true); // видимость стартовой модалки
-  const [settings, setSettings] = useState<Settings | null>(null);      // загруженные настройки
+  const [settings, setSettings] = useState<Settings | null>(null); // загруженные настройки
+
+  // Визуальная обратная связь через цвет рамки
+  const [borderColor, setBorderColor] = useState(theme.colors.border);
+
+  // Анимация встряхивания для неверного ответа
+  const shakeOffset = useSharedValue(0);
+  const shakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeOffset.value }],
+  }));
+
+  // Функция для запуска анимации встряхивания
+  const triggerShake = () => {
+    shakeOffset.value = withSequence(
+      withTiming(-10, { duration: 100 }),
+      withTiming(10, { duration: 100 }),
+      withTiming(-10, { duration: 100 }),
+      withTiming(10, { duration: 100 }),
+      withTiming(0, { duration: 100 })
+    );
+  };
 
   // Загружаем настройки один раз и ставим длительность раунда
   useEffect(() => {
@@ -45,49 +83,130 @@ export default function GameScreen() {
         setTimeLeft(s.durationSec);
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
+
+  // Загрузка и настройка аудио
+  useEffect(() => {
+    const loadSound = async () => {
+      try {
+        const { sound: audioSound } = await Audio.Sound.createAsync(
+          require("../assets/audio/background_music.mp3"), // Укажи путь к файлу
+          { shouldPlay: false, isLooping: true } // Не играть сразу, зациклить
+        );
+        soundRef.current = audioSound;
+        setSound(audioSound);
+      } catch (error) {
+        console.log("Ошибка загрузки музыки:", error);
+      }
+    };
+
+    loadSound();
+
+    // Очистка при размонтировании
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
+      }
+    };
+  }, []);
+
+  // Воспроизведение музыки при старте игры
+  useEffect(() => {
+    if (isGameStarted && sound && settings?.soundEnabled) {
+      const playSound = async () => {
+        try {
+          await sound.playAsync();
+        } catch (error) {
+          console.log("Ошибка воспроизведения музыки:", error);
+        }
+      };
+      playSound();
+    }
+  }, [isGameStarted, sound, settings?.soundEnabled]);
+
+  // Пауза музыки при завершении игры
+  useEffect(() => {
+    if (isGameOver && sound) {
+      const pauseSound = async () => {
+        try {
+          await sound.pauseAsync();
+        } catch (error) {
+          console.log("Ошибка паузы музыки:", error);
+        }
+      };
+      pauseSound();
+    }
+  }, [isGameOver, sound]);
 
   // Генерация целочисленного случайного числа
   const randInt = (min: number, max: number) => {
-    const lo = Math.min(min, max), hi = Math.max(min, max);
+    const lo = Math.min(min, max),
+      hi = Math.max(min, max);
     return Math.floor(Math.random() * (hi - lo + 1)) + lo;
   };
 
   // Выбор операции по включенным настройкам
-  const pickOp = (ops: Settings['ops']): '+' | '-' | '*' | '/' => {
+  const pickOp = (ops: Settings["ops"]): "+" | "-" | "*" | "/" => {
     const list = [
-      ops.add ? '+' : null,
-      ops.sub ? '-' : null,
-      ops.mul ? '*' : null,
-      ops.div ? '/' : null,
-    ].filter((x): x is '+' | '-' | '*' | '/' => x !== null);
+      ops.add ? "+" : null,
+      ops.sub ? "-" : null,
+      ops.mul ? "*" : null,
+      ops.div ? "/" : null,
+    ].filter((x): x is "+" | "-" | "*" | "/" => x !== null);
 
-    return list.length ? list[Math.floor(Math.random() * list.length)] : '+';
+    return list.length ? list[Math.floor(Math.random() * list.length)] : "+";
+  };
+
+  // Показать визуальную обратную связь через цвет рамки
+  const showBorderFeedback = (type: "correct" | "wrong" | "skip") => {
+    let color = theme.colors.border;
+
+    switch (type) {
+      case "correct":
+        color = theme.colors.success;
+        break;
+      case "wrong":
+        color = theme.colors.error;
+        break;
+      case "skip":
+        color = theme.colors.warning;
+        break;
+    }
+
+    setBorderColor(color);
+    // Вернуть обычный цвет через 1 секунду
+    setTimeout(() => setBorderColor(theme.colors.border), 1000);
   };
 
   // Генерируем пример: без eval, деление даёт целый ответ, разность неотрицательная
   const generateProblem = useCallback(() => {
-    const s = settings ?? { rangeMin: 1, rangeMax: 50, ops: { add: true, sub: true, mul: true, div: true } } as Settings;
+    const s =
+      settings ??
+      ({
+        rangeMin: 1,
+        rangeMax: 50,
+        ops: { add: true, sub: true, mul: true, div: true },
+      } as Settings);
     const op = pickOp(s.ops);
 
     let a = randInt(s.rangeMin, s.rangeMax);
     let b = randInt(s.rangeMin, s.rangeMax);
 
-    if (op === '-') {
+    if (op === "-") {
       if (b > a) [a, b] = [b, a]; // избегаем отрицательных результатов
-    } else if (op === '/') {
-      // Хотим целый ответ: a = b * q
-      b = Math.max(1, randInt(s.rangeMin, s.rangeMax));
-      const q = randInt(Math.max(1, s.rangeMin), Math.max(1, s.rangeMax));
-      a = b * q;  
+    } else if (op === "/") {
+      b = randInt(s.rangeMin, s.rangeMax);
+      const max_k = Math.floor(s.rangeMax / b);
+      const min_k = Math.ceil(s.rangeMin / b);
+      const k = randInt(Math.max(1, min_k), max_k);
+      a = b * k;
     }
 
     const correct =
-      op === '+' ? a + b :
-        op === '-' ? a - b :
-          op === '*' ? a * b :
-            a / b;
+      op === "+" ? a + b : op === "-" ? a - b : op === "*" ? a * b : a / b;
 
     setProblem(`${a} ${op} ${b}`);
     setCorrectAnswer(correct);
@@ -100,14 +219,20 @@ export default function GameScreen() {
     if (!settings) return;
 
     if (countdown > 0 && isStartModalVisible) {
-      const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+      const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
       return () => clearTimeout(t);
     } else if (countdown === 0 && !isGameStarted) {
       setIsStartModalVisible(false);
       setIsGameStarted(true);
       generateProblem();
     }
-  }, [countdown, isGameStarted, isStartModalVisible, settings, generateProblem]);
+  }, [
+    countdown,
+    isGameStarted,
+    isStartModalVisible,
+    settings,
+    generateProblem,
+  ]);
 
   // Таймер раунда и завершение игры
   useEffect(() => {
@@ -126,10 +251,27 @@ export default function GameScreen() {
 
     const answerTime = (Date.now() - answerStartTime) / 1000;
     const isCorrect = parseFloat(trimmed) === correctAnswer;
+    if (Platform.OS === "ios") {
+      if (isCorrect) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        triggerShake();
+      }
+    } else if (Platform.OS === "android") {
+      if (isCorrect) {
+        Vibration.vibrate(100);
+      } else {
+        Vibration.vibrate([0, 100, 50, 100]);
+      }
+    }
 
     // Бонус за скорость: если ответ <5 сек (+12 очков суммарно)
-    const bonus = isCorrect && answerTime < 5 ? 12 : 0;
+    const bonus = isCorrect && answerTime < 5 ? 2 : 0;
     const delta = isCorrect ? 10 + bonus : -5;
+
+    // Показать визуальную обратную связь
+    showBorderFeedback(isCorrect ? "correct" : "wrong");
 
     setScore((prev) => prev + delta);
     setUserAnswer("");
@@ -138,6 +280,12 @@ export default function GameScreen() {
 
   // Обработка пропуска примера (-2 очка)
   const handleSkip = () => {
+    if (Platform.OS === "ios") {
+      Haptics.selectionAsync();
+    } else if (Platform.OS === "android") {
+      Vibration.vibrate(50);
+    }
+    showBorderFeedback("skip");
     setScore((prev) => prev - 2);
     setUserAnswer("");
     generateProblem();
@@ -154,6 +302,9 @@ export default function GameScreen() {
     setProblem("");
     setCorrectAnswer(0);
     setAnswerStartTime(0);
+    if (sound && settings?.soundEnabled) {
+      sound.playAsync();
+    }
   };
 
   // Сохраняем результат в таблицу рекордов при закрытии финальной модалки
@@ -195,41 +346,74 @@ export default function GameScreen() {
 
         {/* Основной экран игры */}
         {isGameStarted && !isGameOver && (
-          <View style={styles.gameContent}>
-            <StyledText variant="regular" style={styles.timer}>
-              Время: <StyledText variant="highlight">{timeLeft} сек</StyledText>
-            </StyledText>
-            <StyledText variant="regular" style={styles.score}>
-              Очки: <StyledText variant="highlight">{score}</StyledText>
-            </StyledText>
-            <StyledText variant="title" style={styles.problem}>
-              {problem}
-            </StyledText>
-            <TextInput
-              style={styles.input}
-              value={userAnswer}
-              onChangeText={setUserAnswer}
-              keyboardType="numeric"
-              placeholder="Ваш ответ"
-              placeholderTextColor="#ccc"
-              onSubmitEditing={handleSubmit}
-              blurOnSubmit={false}
-              autoFocus={true}
-            />
-            <View style={styles.buttonContainer}>
-              <StyledButton
-                variant="primary"
-                label="Ответить"
-                onPress={handleSubmit}
+          <Animated.View
+            entering={FadeInUp.duration(600)}
+            style={styles.gameContent}
+          >
+            <Animated.View
+              entering={SlideInLeft.duration(400).delay(100)}
+              style={styles.gameInfo}
+            >
+              <StyledText variant="regular" style={styles.timer}>
+                ⏰ Время:{" "}
+                <StyledText variant="highlight">{timeLeft}с</StyledText>
+              </StyledText>
+              <StyledText variant="regular" style={styles.score}>
+                🎯 Очки: <StyledText variant="highlight">{score}</StyledText>
+              </StyledText>
+            </Animated.View>
+
+            <Animated.View
+              entering={BounceIn.duration(800).delay(200)}
+              style={[styles.problemContainer, { borderColor }, shakeStyle]}
+            >
+              <StyledText variant="title" style={styles.problem}>
+                {problem}
+              </StyledText>
+            </Animated.View>
+
+            <Animated.View entering={FadeInUp.duration(600).delay(300)}>
+              <TextInput
+                style={styles.input}
+                value={userAnswer}
+                onChangeText={setUserAnswer}
+                keyboardType="numeric"
+                placeholder="Ваш ответ"
+                placeholderTextColor={theme.colors.textSecondary}
+                onSubmitEditing={handleSubmit}
+                onKeyPress={({ nativeEvent }) => {
+                  if (
+                    nativeEvent.key === "Enter" &&
+                    Platform.OS === "android"
+                  ) {
+                    handleSubmit();
+                  }
+                }}
+                blurOnSubmit={false}
+                autoFocus={true}
               />
+            </Animated.View>
+
+            <Animated.View
+              entering={FadeInUp.duration(600).delay(400)}
+              style={styles.buttonContainer}
+            >
               <StyledButton
                 variant="skip"
                 label="Пропустить"
                 iconName="forward"
                 onPress={handleSkip}
+                style={styles.actionButton}
               />
-            </View>
-          </View>
+              <StyledButton
+                variant="primary"
+                label="Ответить"
+                iconName="check"
+                onPress={handleSubmit}
+                style={styles.actionButton}
+              />
+            </Animated.View>
+          </Animated.View>
         )}
 
         {/* Финальная модалка с итоговой статистикой */}
@@ -246,23 +430,26 @@ export default function GameScreen() {
             <FontAwesome5
               name="trophy"
               size={48}
-              color="#6366f1"
+              color={theme.colors.primary}
               style={styles.modalIcon}
             />
             <StyledText variant="title">Игра окончена!</StyledText>
             <StyledText variant="regular" style={styles.score}>
-              Ваш счёт: <StyledText variant="highlight">{score} очков</StyledText>
+              Ваш счёт:{" "}
+              <StyledText variant="highlight">{score} очков</StyledText>
             </StyledText>
             <View style={styles.modalButtonContainer}>
               <StyledButton
-                variant="modal"
+                variant="primary"
                 label="Играть снова"
+                iconName="refresh"
                 style={styles.modalButton}
                 onPress={handleRestart}
               />
               <StyledButton
-                variant="modal"
+                variant="primary"
                 label="На главную"
+                iconName="home"
                 style={styles.modalButton}
                 onPress={() => router.back()}
               />
@@ -278,89 +465,105 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.background,
   },
   contentContainer: {
-    padding: 20,
-    paddingTop: 40,
+    padding: theme.spacing.lg,
+    paddingTop: theme.spacing.xl,
     alignItems: "center",
   },
   gameContent: {
     width: "100%",
     alignItems: "center",
+    backgroundColor: theme.colors.backgroundLight,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.xl,
+    ...theme.shadows.large,
+  },
+  gameInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: theme.spacing.xl,
+    paddingBottom: theme.spacing.md,
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.border,
   },
   timer: {
-    marginBottom: 12,
-  },
-  problem: {
-    marginBottom: 24,
+    color: theme.colors.accent,
+    fontWeight: "bold" as const,
   },
   score: {
-    marginTop: 24,
+    color: theme.colors.success,
+    fontWeight: "bold" as const,
+  },
+  problemContainer: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.xl,
+    marginBottom: theme.spacing.xl,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    ...theme.shadows.medium,
+  },
+  problem: {
+    textAlign: "center",
+    color: theme.colors.textPrimary,
+    fontWeight: "bold" as const,
   },
   input: {
     width: "80%",
-    borderWidth: 1,
-    borderColor: "#c8c8c8",
-    borderRadius: 16,
-    padding: 12,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
     fontSize: 18,
     textAlign: "center",
-    marginBottom: 24,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    marginBottom: theme.spacing.xl,
+    backgroundColor: theme.colors.backgroundLight,
+    color: theme.colors.textPrimary,
+    ...theme.shadows.medium,
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: "80%",
-    gap: 12,
+    width: "100%",
+    gap: theme.spacing.md,
+  },
+  actionButton: {
+    flex: 1,
   },
   modalContent: {
-    backgroundColor: "#fff",
-    padding: 24,
-    borderRadius: 15,
+    backgroundColor: theme.colors.backgroundLight,
+    padding: theme.spacing.xl,
+    borderRadius: theme.borderRadius.xl,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 8,
+    ...theme.shadows.large,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
   },
   modalContentStart: {
-    backgroundColor: "#6366f1",
-    padding: 24,
-    borderRadius: 15,
+    backgroundColor: theme.colors.primary,
+    padding: theme.spacing.xl,
+    borderRadius: theme.borderRadius.xl,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 8,
+    ...theme.shadows.large,
   },
   modalButtonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
-    marginTop: 24,
-    gap: 10,
+    marginTop: theme.spacing.xl,
+    gap: theme.spacing.sm,
   },
   modalIcon: {
-    marginBottom: 16,
+    marginBottom: theme.spacing.lg,
   },
   modalButton: {
-    paddingHorizontal: 15,
+    flex: 1,
   },
   modalText: {
-    color: "#fff",
+    color: theme.colors.textOnPrimary,
     textAlign: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
   },
 });

@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';   // асинхронное хранилище ключ-значение
+import AsyncStorage from '@react-native-async-storage/async-storage'; // асинхронное хранилище ключ-значение
 
 // Ключи для изоляции записей и версионирования
 const KEYS = {
@@ -12,6 +12,7 @@ export type Settings = {
   rangeMin: number;          // минимальное число
   rangeMax: number;          // максимальное число
   ops: { add: boolean; sub: boolean; mul: boolean; div: boolean };  // включенные операции
+  soundEnabled: boolean; // включение/выключение звука
 };
 
 // Значения по умолчанию для настроек
@@ -20,6 +21,7 @@ export const defaultSettings: Settings = {
   rangeMin: 1,
   rangeMax: 50,
   ops: { add: true, sub: true, mul: true, div: true },
+  soundEnabled: true,
 };
 
 // Загрузка настроек из хранилища, или значения по умолчанию
