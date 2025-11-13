@@ -302,7 +302,6 @@ export default function GameScreen() {
     setProblem("");
     setCorrectAnswer(0);
     setAnswerStartTime(0);
-    setIsStartModalVisible(true);
     if (sound && settings?.soundEnabled) {
       sound.playAsync();
     }
@@ -418,7 +417,7 @@ export default function GameScreen() {
         )}
 
         {/* Финальная модалка с итоговой статистикой */}
-        <Modal isVisible={isGameOver}>
+        <Modal isVisible={isGameOver} onModalHide={() => {setIsStartModalVisible(true)}}>
           <Animated.View
             entering={FadeIn.duration(500)}
             exiting={FadeOut.duration(500)}
