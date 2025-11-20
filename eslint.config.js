@@ -8,3 +8,14 @@ module.exports = defineConfig([
     ignores: ['dist/*'],
   },
 ]);
+
+export default [
+  {
+    files: ["**/__tests__/**/*.{ts,tsx,js,jsx}", "jestSetup.js"],
+    languageOptions: {
+      globals: {
+        jest: true
+      }
+    }
+  }
+];

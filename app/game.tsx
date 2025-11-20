@@ -29,6 +29,147 @@ import Animated, {
 } from "react-native-reanimated"; // анимации для модалок (появления/скрытия)
 import { theme } from "../ui";
 
+
+// Генерация целочисленного случайного числа
+export function randInt(min: number, max: number): number {
+  const lo = Math.min(min, max),
+    hi = Math.max(min, max);
+  return Math.floor(Math.random() * (hi - lo + 1)) + lo;
+};
+
+
+// Выбор операции по настройкам
+export function pickOp(ops: Settings["ops"]): "+" | "-" | "*" | "/" {
+  const list = Object.entries(ops)
+    .filter(([_, v]) => v)
+    .map(([key]) =>
+      key === "add"
+        ? "+"
+        : key === "sub"
+          ? "-"
+          : key === "mul"
+            ? "*"
+            : "/"
+    );
+
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+
+// Генерируем пример: без eval, деление даёт целый ответ, разность неотрицательная
+export const generateProblem = (settings?: Settings) => {
+  // Выбираем настройки (если не переданы)
+  const s =
+    settings ??
+    ({
+      rangeMin: 1,
+      rangeMax: 50,
+      ops: { add: true, sub: true, mul: true, div: true },
+    } as Settings);
+
+  let op = pickOp(s.ops);
+
+  // Генерация чисел
+  let a = randInt(s.rangeMin, s.rangeMax);
+  let b = randInt(s.rangeMin, s.rangeMax);
+
+  if (op === "-") {
+    if (b > a) [a, b] = [b, a]; // избегаем отрицательных результатов
+  } else if (op === "/") {
+    // b = randInt(s.rangeMin, s.rangeMax);
+    // const max_k = Math.floor(s.rangeMax / b);
+    // const min_k = Math.ceil(s.rangeMin / b);
+    // const k = randInt(Math.max(1, min_k), max_k);
+    // a = b * k;
+
+    // гарантируем, что делитель не превышает rangeMax и не равен 0
+    do {
+      b = randInt(s.rangeMin, s.rangeMax);
+
+      const max_k = Math.floor(s.rangeMax / b);
+      const min_k = Math.max(1, Math.ceil(s.rangeMin / b));
+
+      if (max_k >= 1) {
+        const lo = Math.min(min_k, max_k);
+        const hi = Math.max(min_k, max_k);
+        const k = randInt(lo, hi);
+        a = b * k;
+        break;
+      }
+    } while (true);
+  }
+
+  const correct =
+    op === "+" ? a + b : op === "-" ? a - b : op === "*" ? a * b : a / b;
+
+  // возвращаем объект для тестов и внутренней логики
+  const problem = `${a} ${op} ${b}`;
+
+  return { problem, correct };
+};
+
+
+// Подсчёт очков игрока
+export function calculateScore(
+  currentScore: number,
+  isCorrect: boolean | null,
+  timeTaken: number
+): number {
+  const base = 10; // базовые очки за правильный ответ
+  const bonusFast = 5; // если ответ <5 сек
+  const penaltyWrong = -5; // штраф
+
+  if (isCorrect === true) {
+    let gained = base;
+    if (timeTaken < 5) gained += bonusFast;
+    return currentScore + gained;
+  }
+
+  if (isCorrect === false) {
+    return Math.max(0, currentScore + penaltyWrong);
+  }
+
+  // если пропуск
+  return currentScore;
+}
+
+
+// Логика таймера игры
+// Возвращает объект с методами: start(), tick(), reset()
+export function createTimerLogic(initialTime: number = 60) {
+  let time = initialTime;
+  let running = false;
+
+  return {
+    getTime: () => time,
+    isRunning: () => running,
+
+    start() {
+      if (time > 0) running = true;
+    },
+
+    tick() {
+      if (!running) return time;
+      if (time > 0) time -= 1;
+      if (time <= 0) {
+        time = 0;
+        running = false;
+      }
+      return time;
+    },
+
+    reset() {
+      time = initialTime;
+      running = false;
+      return time;
+    },
+  };
+}
+
+
+
+
+// Основной экран игры
 export default function GameScreen() {
   const router = useRouter();
 
@@ -141,24 +282,9 @@ export default function GameScreen() {
     }
   }, [isGameOver, sound]);
 
-  // Генерация целочисленного случайного числа
-  const randInt = (min: number, max: number) => {
-    const lo = Math.min(min, max),
-      hi = Math.max(min, max);
-    return Math.floor(Math.random() * (hi - lo + 1)) + lo;
-  };
+  // Генерация целочисленного случайного числа randInt перенесена наверх
 
-  // Выбор операции по включенным настройкам
-  const pickOp = (ops: Settings["ops"]): "+" | "-" | "*" | "/" => {
-    const list = [
-      ops.add ? "+" : null,
-      ops.sub ? "-" : null,
-      ops.mul ? "*" : null,
-      ops.div ? "/" : null,
-    ].filter((x): x is "+" | "-" | "*" | "/" => x !== null);
-
-    return list.length ? list[Math.floor(Math.random() * list.length)] : "+";
-  };
+  // Выбор операции по включенным настройкам pickOp перенесена наверх
 
   // Показать визуальную обратную связь через цвет рамки
   const showBorderFeedback = (type: "correct" | "wrong" | "skip") => {
@@ -181,38 +307,7 @@ export default function GameScreen() {
     setTimeout(() => setBorderColor(theme.colors.border), 1000);
   };
 
-  // Генерируем пример: без eval, деление даёт целый ответ, разность неотрицательная
-  const generateProblem = useCallback(() => {
-    const s =
-      settings ??
-      ({
-        rangeMin: 1,
-        rangeMax: 50,
-        ops: { add: true, sub: true, mul: true, div: true },
-      } as Settings);
-    const op = pickOp(s.ops);
-
-    let a = randInt(s.rangeMin, s.rangeMax);
-    let b = randInt(s.rangeMin, s.rangeMax);
-
-    if (op === "-") {
-      if (b > a) [a, b] = [b, a]; // избегаем отрицательных результатов
-    } else if (op === "/") {
-      b = randInt(s.rangeMin, s.rangeMax);
-      const max_k = Math.floor(s.rangeMax / b);
-      const min_k = Math.ceil(s.rangeMin / b);
-      const k = randInt(Math.max(1, min_k), max_k);
-      a = b * k;
-    }
-
-    const correct =
-      op === "+" ? a + b : op === "-" ? a - b : op === "*" ? a * b : a / b;
-
-    setProblem(`${a} ${op} ${b}`);
-    setCorrectAnswer(correct);
-    setAnswerStartTime(Date.now());
-    return correct;
-  }, [settings]);
+  // Функция генерации generateProblem перенесена наверх
 
   // Старт: обратный отсчёт -> скрываем модалку -> запускаем игру и первый пример
   useEffect(() => {

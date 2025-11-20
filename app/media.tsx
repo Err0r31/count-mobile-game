@@ -3,8 +3,8 @@ import { AVPlaybackStatus, ResizeMode, Video } from 'expo-av';
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Alert, Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
-import StyledButton from '../components/StyledButton';
-import StyledText from '../components/StyledText';
+import StyledButton from '@/components/StyledButton';
+import StyledText from '@/components/StyledText';
 
 export default function MediaScreen() {
   const router = useRouter();
