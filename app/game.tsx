@@ -1,6 +1,6 @@
 import StyledButton from "@/components/StyledButton"; // единый стиль кнопок проекта
 import StyledText from "@/components/StyledText"; // единый стиль текста проекта
-import { addHighscore, loadSettings, type Settings } from "@/storage"; // функции для работы с настройками и рекордами
+import { addHighscore, defaultSettings, loadSettings, type Settings } from "@/storage"; // функции для работы с настройками и рекордами
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5"; // иконки из библиотеки FontAwesome
 import { Audio } from "expo-av";
 import * as Haptics from "expo-haptics";
@@ -341,6 +341,10 @@ export default function GameScreen() {
             <StyledText variant="title" style={styles.modalText}>
               Игра начнётся через {countdown}...
             </StyledText>
+            <StyledText variant="regular" style={styles.modalSubText}>
+              Раунд длится {settings?.durationSec ?? defaultSettings.durationSec}
+              с
+            </StyledText>
           </Animated.View>
         </Modal>
 
@@ -565,5 +569,11 @@ const styles = StyleSheet.create({
   modalText: {
     color: theme.colors.textOnPrimary,
     textAlign: "center",
+  },
+  modalSubText: {
+    color: theme.colors.textOnPrimary,
+    textAlign: "center",
+    marginTop: theme.spacing.sm,
+    opacity: 0.85,
   },
 });

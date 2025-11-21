@@ -1,4 +1,3 @@
-import StyledButton from "@/components/StyledButton"; // единый стиль кнопок проекта
 import StyledText from "@/components/StyledText"; // единый стиль текста проекта
 import { theme } from "@/ui"; // тема
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5"; // иконки из библиотеки FontAwesome
@@ -78,15 +77,6 @@ export default function RuleScreen() {
         </Animated.View>
       </View>
 
-      {/* Кнопка внизу — вернуть пользователя на предыдущий экран */}
-      <Animated.View entering={FadeInUp.duration(600).delay(700)}>
-        <StyledButton
-          variant="primary"
-          label="Назад"
-          iconName="arrow-left"
-          onPress={() => router.push('/')}
-        />
-      </Animated.View>
     </ScrollView>
   );
 }

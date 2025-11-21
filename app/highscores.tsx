@@ -119,13 +119,6 @@ export default function HighscoresScreen() {
       >
         <StyledButton
           variant="primary"
-          label="Назад"
-          iconName="arrow-left"
-          onPress={() => router.back()}
-          style={styles.actionButton}
-        />
-        <StyledButton
-          variant="primary"
           label="Статистика"
           iconName="chart-line"
           onPress={() => router.push("/statistics")}
