@@ -38,7 +38,7 @@ export default function MainScreen() {
             variant="primary"
             label="Играть"
             iconName="play-circle"
-            onPress={() => router.push("/game")}
+            onPress={() => router.push("/modeSelect")}
             style={styles.navigationButton}
           />
           
@@ -66,13 +66,13 @@ export default function MainScreen() {
             style={styles.navigationButton}
           />
           
-          <StyledButton
+          {/* <StyledButton
             variant="primary"
             label="Мультимедиа"
             iconName="image"
             onPress={() => router.push("/media")}
             style={styles.navigationButton}
-          />
+          /> */}
         </View>
       </Animated.View>
     </View>
