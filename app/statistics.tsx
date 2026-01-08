@@ -1,4 +1,3 @@
-import StyledButton from "@/components/StyledButton"; // единый стиль кнопок проекта
 import StyledText from "@/components/StyledText"; // единый стиль текста проекта
 import { loadHighscores } from "@/storage"; // функции для работы с рекордами
 import { theme } from "@/ui"; // тема
@@ -138,15 +137,6 @@ export default function StatisticsScreen() {
             Сыграйте несколько игр, чтобы увидеть свою статистику
           </StyledText>
         </Animated.View>
-
-        <Animated.View entering={FadeInUp.duration(600).delay(400)}>
-          <StyledButton
-            variant="primary"
-            label="Назад"
-            iconName="arrow-left"
-            onPress={() => router.push("/highscores")}
-          />
-        </Animated.View>
       </ScrollView>
     );
   }
@@ -236,15 +226,6 @@ export default function StatisticsScreen() {
           />
         </View>
       </View>
-
-      <Animated.View entering={FadeInUp.duration(600).delay(500)}>
-        <StyledButton
-          variant="primary"
-          label="Назад"
-          iconName="arrow-left"
-          onPress={() => router.back()}
-        />
-      </Animated.View>
     </ScrollView>
   );
 }

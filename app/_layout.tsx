@@ -64,7 +64,6 @@ export default function RootLayout() {
           name="game"
           options={{ 
             title: "Игра", 
-            headerLeft: () => <BackButton />,
             headerTitle: () => renderTitle("Игра")
           }}
         />
@@ -107,6 +106,23 @@ export default function RootLayout() {
             headerLeft: () => <BackButton />,
             headerTitle: () => renderTitle("Статистика")
           }}
+        />
+        <Stack.Screen
+          name="modeSelect"
+          options={{ 
+            title: "Режимы", 
+            headerTitle: () => renderTitle("Режимы")
+          }}
+        />
+        <Stack.Screen
+          name="levels/index"
+          options={{ 
+            title: "Уровни", 
+            headerTitle: () => renderTitle("Уровни")
+          }}
+        />
+        <Stack.Screen
+          name="levels/[id]"
         />
       </Stack>
     </>
