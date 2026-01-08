@@ -1,14 +1,45 @@
 import StyledButton from "@/components/StyledButton"; // единый стиль кнопок проекта
 import StyledText from "@/components/StyledText"; // единый стиль текста проекта
+import { authAPI, getToken } from "@/api"; // API для проверки авторизации
 import { theme } from "@/ui"; // тема
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5"; // иконки из библиотеки FontAwesome
-import { useRouter } from "expo-router"; // хук для переходов между экранами
-import React from "react";
+import { useRouter, useFocusEffect } from "expo-router"; // хук для переходов между экранами
+import React, { useEffect, useState, useCallback } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, { BounceIn, FadeInDown, FadeInUp } from "react-native-reanimated";
 
 export default function MainScreen() {
   const router = useRouter(); // переходы между экранами
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  // Обновляем статус авторизации при возврате на экран
+  useFocusEffect(
+    useCallback(() => {
+      checkAuth();
+    }, [])
+  );
+
+  const checkAuth = async () => {
+    try {
+      const token = await getToken();
+      if (token) {
+        // Проверяем, что токен валидный
+        await authAPI.getCurrentUser();
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+      }
+    } catch (error) {
+      setIsAuthenticated(false);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -44,14 +75,6 @@ export default function MainScreen() {
           
           <StyledButton
             variant="primary"
-            label="Рекорды"
-            iconName="trophy"
-            onPress={() => router.push("/highscores")}
-            style={styles.navigationButton}
-          />
-          
-          <StyledButton
-            variant="primary"
             label="Правила"
             iconName="book"
             onPress={() => router.push("/rules")}
@@ -65,6 +88,24 @@ export default function MainScreen() {
             onPress={() => router.push("/settings")}
             style={styles.navigationButton}
           />
+          
+          {isAuthenticated ? (
+            <StyledButton
+              variant="secondary"
+              label="Профиль"
+              iconName="user-circle"
+              onPress={() => router.push("/profile")}
+              style={styles.navigationButton}
+            />
+          ) : (
+            <StyledButton
+              variant="secondary"
+              label="Вход / Регистрация"
+              iconName="user"
+              onPress={() => router.push("/auth")}
+              style={styles.navigationButton}
+            />
+          )}
           
           {/* <StyledButton
             variant="primary"

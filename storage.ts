@@ -5,6 +5,7 @@ const KEYS = {
   SETTINGS: "qs_settings_v1",
   HIGHSCORES: "qs_highscores_v1",
   LEVEL_PROGRESS: "qs_level_progress_v1",
+  OFFLINE_MODE: "qs_offline_mode_v1", // флаг оффлайн режима
 } as const;
 
 // Модель настроек игры
@@ -91,4 +92,14 @@ export async function saveLevelProgress(levelId: number, correct: number, total:
 
 export async function resetLevelsProgress() {
   await AsyncStorage.removeItem(KEYS.LEVEL_PROGRESS);
+}
+
+// Функции для оффлайн режима
+export async function isOfflineMode(): Promise<boolean> {
+  const raw = await AsyncStorage.getItem(KEYS.OFFLINE_MODE);
+  return raw === "true";
+}
+
+export async function setOfflineMode(enabled: boolean): Promise<void> {
+  await AsyncStorage.setItem(KEYS.OFFLINE_MODE, enabled ? "true" : "false");
 }

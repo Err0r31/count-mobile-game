@@ -6,6 +6,7 @@ import {
   saveSettings,
   type Settings,
 } from "@/storage"; // функции для работы с настройками
+import { offlineAPI } from "@/api"; // API для оффлайн режима
 import { theme } from "@/ui"; // тема
 import { useRouter } from "expo-router"; // хук для переходов между экранами
 import React, { useEffect, useState } from "react"; // хуки состояния и жизненного цикла
@@ -73,6 +74,29 @@ export default function SettingsScreen() {
       await saveSettings(settings);
       Alert.alert("Сохранено", "Настройки применены");
       router.back();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Отправка результатов на сервер
+  const onSyncResults = async () => {
+    try {
+      setBusy(true);
+      const result = await offlineAPI.syncPendingHighscores();
+      if (result.success > 0 || result.failed === 0) {
+        Alert.alert(
+          "Успешно",
+          `Отправлено результатов: ${result.success}${result.failed > 0 ? `\nНе удалось отправить: ${result.failed}` : ""}`
+        );
+      } else {
+        Alert.alert(
+          "Ошибка",
+          `Не удалось отправить результаты. Проверьте подключение к интернету и авторизацию.`
+        );
+      }
+    } catch (error: any) {
+      Alert.alert("Ошибка", error.message || "Не удалось отправить результаты");
     } finally {
       setBusy(false);
     }
@@ -192,6 +216,16 @@ export default function SettingsScreen() {
 
       <Animated.View entering={FadeInUp.duration(600).delay(600)}>
         <StyledButton label="Сохранить" onPress={onSave} disabled={busy} />
+      </Animated.View>
+
+      {/* Кнопка отправки результатов для оффлайн режима */}
+      <Animated.View entering={FadeInUp.duration(600).delay(700)}>
+        <StyledButton
+          label="Отправить результаты"
+          onPress={onSyncResults}
+          disabled={busy}
+          variant="secondary"
+        />
       </Animated.View>
     </ScrollView>
   );

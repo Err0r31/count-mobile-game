@@ -11,7 +11,7 @@ type StyledButtonProps = TouchableOpacityProps & {
   label?: string;                                           // текст кнопки
   iconName?: string;                                        // имя иконки из FontAwesome
   iconSize?: number;                                        // размер иконки
-  variant?: "primary" | "skip" | "modal";                   // визуальный вариант кнопки
+  variant?: "primary" | "skip" | "modal" | "secondary";   // визуальный вариант кнопки
 };
 
 export default function StyledButton({
@@ -32,6 +32,7 @@ export default function StyledButton({
         variant === "primary" && styles.primary,
         variant === "skip" && styles.skip,
         variant === "modal" && styles.modal,
+        variant === "secondary" && styles.secondary,
         style,
       ]}
       disabled={disabled}
@@ -77,6 +78,9 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     flex: 1,
     marginHorizontal: theme.spacing.sm,
+  },
+  secondary: {
+    backgroundColor: theme.colors.accent,
   },
   icon: {
     marginRight: theme.spacing.sm,

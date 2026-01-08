@@ -1,3 +1,4 @@
+import { getToken, highscoresAPI, offlineAPI } from "@/api"; // API для работы с сервером
 import StyledButton from "@/components/StyledButton"; // единый стиль кнопок проекта
 import StyledText from "@/components/StyledText"; // единый стиль текста проекта
 import { addHighscore, defaultSettings, loadSettings, type Settings } from "@/storage"; // функции для работы с настройками и рекордами
@@ -7,25 +8,25 @@ import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router"; // хук для переходов между экранами
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  Vibration,
-  View,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    Vibration,
+    View,
 } from "react-native";
 import Modal from "react-native-modal"; // библиотека для модальных окон (старт, финиш)
 import Animated, {
-  BounceIn,
-  FadeIn,
-  FadeInUp,
-  FadeOut,
-  SlideInLeft,
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withTiming,
+    BounceIn,
+    FadeIn,
+    FadeInUp,
+    FadeOut,
+    SlideInLeft,
+    useAnimatedStyle,
+    useSharedValue,
+    withSequence,
+    withTiming,
 } from "react-native-reanimated"; // анимации для модалок (появления/скрытия)
 import { theme } from "../ui";
 
@@ -311,7 +312,25 @@ export default function GameScreen() {
   useEffect(() => {
     if (!isGameOver) return;
     (async () => {
-      await addHighscore({ date: new Date().toISOString(), score });
+      const highscore = { date: new Date().toISOString(), score };
+      
+      // Всегда сохраняем локально
+      await addHighscore(highscore);
+      
+      // Пытаемся отправить на сервер, если пользователь авторизован
+      const token = await getToken();
+      if (token) {
+        try {
+          await highscoresAPI.create(highscore);
+        } catch (error) {
+          // Если не удалось отправить, сохраняем в очередь для оффлайн режима
+          console.log("Failed to send highscore to server, adding to offline queue:", error);
+          await offlineAPI.addPendingHighscore(highscore);
+        }
+      } else {
+        // Если пользователь не авторизован, сохраняем в очередь
+        await offlineAPI.addPendingHighscore(highscore);
+      }
     })();
   }, [isGameOver, score]);
 

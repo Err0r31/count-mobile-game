@@ -124,6 +124,22 @@ export default function RootLayout() {
         <Stack.Screen
           name="levels/[id]"
         />
+        <Stack.Screen 
+          name="profile"
+          options={{ 
+            title: "Профиль", 
+            headerLeft: () => <BackButton />,
+            headerTitle: () => renderTitle("Профиль")
+          }}
+        />
+        <Stack.Screen 
+          name="auth"
+          options={{ 
+            title: "Авторизация", 
+            headerLeft: () => <BackButton />,
+            headerTitle: () => renderTitle("Авторизация")
+          }}
+        />
       </Stack>
     </>
   );
