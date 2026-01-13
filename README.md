@@ -1,3 +1,5 @@
+<img width="784" height="503" alt="image" src="https://github.com/user-attachments/assets/57d838ef-5582-43cb-b120-572e447a8ba3" />
+
 # Count Mobile Game
 
 **Count Mobile Game** — это мобильная игра на реакцию, внимательность и скорость счёта. Игроку необходимо как можно быстрее и точнее решать математические примеры, зарабатывая очки и продвигаясь по уровням сложности.
@@ -17,6 +19,8 @@
 - Переход между экранами через Expo Router  
 - Хранение прогресса игрока  
 - Адаптация интерфейса под мобильные устройства  
+
+<img width="711" height="1388" alt="image" src="https://github.com/user-attachments/assets/bebdf8a6-ec91-4924-b109-ac032f0d4370" />
 
 ---
 
